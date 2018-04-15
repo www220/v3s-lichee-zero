@@ -54,4 +54,4 @@ if PLATFORM == 'gcc':
     CXXFLAGS = CFLAGS
 
 DUMP_ACTION = OBJDUMP + ' -D -S $TARGET > rtt.asm\n'
-POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n' + 'tools/mk.cmd $TARGET \n'
+POST_ACTION = OBJCPY + ' -O binary $TARGET rtthread.bin\n' + SIZE + ' $TARGET \n' + 'tools\\mk.cmd $TARGET \n'

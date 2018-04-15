@@ -100,7 +100,8 @@ void rt_hw_board_init(void)
     /* 初始化中断控制器 */
     rt_hw_interrupt_init();
 
-    
+    rt_system_heap_init(RT_HW_HEAP_BEGIN, RT_HW_HEAP_END);
+
 #ifdef RT_USING_CONSOLE
     /* set console device */
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
