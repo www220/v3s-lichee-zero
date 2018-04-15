@@ -54,7 +54,7 @@ void clock_irq(void)
     rt_interrupt_leave();
 }
 
-void set_os_clock(void)
+void rt_hw_tick_init(void)
 {
     volatile unsigned int * p_temp;  //临时指针
 
@@ -84,34 +84,28 @@ void set_os_clock(void)
     register_interrupt_routine(50,clock_irq);
 }
 
-static void cpu_sleep(void)
-{
-    asm("WFE");
-}
-
 void rt_hw_board_init(void)
 {
     /* MMU初始化 */
     rt_hw_mmu_init();
 
-    /* init hardware interrupt */
-    rt_hw_uart_init();
-
     /* 初始化中断控制器 */
     rt_hw_interrupt_init();
 
+#ifdef RT_USING_HEAP
     rt_system_heap_init(RT_HW_HEAP_BEGIN, RT_HW_HEAP_END);
+#endif
+
+    /* 设置时钟 */
+    rt_hw_tick_init();
+
+    /* 设置串口 */
+    rt_hw_uart_init();
 
 #ifdef RT_USING_CONSOLE
     /* set console device */
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif /* RT_USING_CONSOLE */
-
-    /* 设置时钟 */
-    set_os_clock();
-
-    /* 设置空闲钩子函数 */
-    rt_thread_idle_sethook(cpu_sleep);
 
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();

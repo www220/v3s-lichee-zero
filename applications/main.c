@@ -23,7 +23,9 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include "rtthread.h"
+
+#include <rtthread.h>
+#include <board.h>
 
 int main()
 {

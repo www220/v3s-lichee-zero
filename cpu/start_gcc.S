@@ -96,7 +96,7 @@ ctor_end:
     /* start RT-Thread Kernel */
     ldr     pc, _rtthread_startup
 _rtthread_startup:
-    .word main
+    .word entry
 
 stack_setup:
     ldr     r0, =stack_top

@@ -3,7 +3,7 @@ OUTPUT_ARCH(arm)
 
 SECTIONS
 {
-    . = 0x41000000;
+    . = 0x43000000;
 
     __text_start = .;
     .text :

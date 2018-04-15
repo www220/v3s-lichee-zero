@@ -17,6 +17,7 @@
 #include <board.h>
 
 #include "cp15.h"
+#include "cortex_a.h"
 
 #define DESC_SEC       (0x2)
 #define CB             (3<<2)  //cache_on, write_back
@@ -36,16 +37,15 @@
 #define DOMAIN0_ATTR   (DOMAIN_CHK<<0)
 #define DOMAIN1_ATTR   (DOMAIN_FAULT<<2)
 
+#define TEX_MEM        (1<<12)
+#define TEX_DEF        (0<<12)
+
 /* Read/Write, cache, write back */
-#define RW_CB          (AP_RW|DOMAIN0|CB|DESC_SEC)
+#define RW_CB          (AP_RW|DOMAIN0|CB|DESC_SEC|XN)
 /* Read/Write, cache, write through */
-#define RW_CNB         (AP_RW|DOMAIN0|CNB|DESC_SEC)
+#define RW_CNB         (AP_RW|DOMAIN0|CNB|DESC_SEC|XN)
 /* Read/Write without cache and write buffer */
-#define RW_NCNB        (AP_RW|DOMAIN0|NCNB|DESC_SEC)
-/* Read/Write without cache and write buffer, no execute */
-#define RW_NCNBXN      (AP_RW|DOMAIN0|NCNB|DESC_SEC|XN)
-/* Read/Write without cache and write buffer */
-#define RW_FAULT       (AP_RW|DOMAIN1|NCNB|DESC_SEC)
+#define RW_NCNB        (AP_RW|DOMAIN0|NCNB|DESC_SEC|XN)
 
 /* dump 2nd level page table */
 void rt_hw_cpu_dump_page_table_2nd(rt_uint32_t *ptb)
@@ -190,18 +190,14 @@ void rt_hw_mmu_init(void)
 
     /* set page table */
     /* 4G 1:1 memory */
-    rt_hw_mmu_setmtt(0, 0xffffffff-1, 0, RW_CB);
-
-    /* 中断向量表映射到0地址 */
-    rt_hw_mmu_setmtt(0x00000000, 0x00100000, 0x41000000, RW_CB);
-    
-    /* 外设不参与dcache */
-    rt_hw_mmu_setmtt(0x01000000, 0x01C68FFF, 0x01000000, RW_NCNBXN);
-
-    rt_hw_mmu_setmtt(0x01C80000, 0x01CB0000, 0x01C80000, RW_NCNBXN);
-
+    rt_hw_mmu_setmtt(0x00000000, 0xFFFFFFFF, 0x00000000, RW_NCNB);
+    rt_hw_mmu_setmtt(0x40000000, 0x43AFFFFF, 0x40000000, RW_CB);
+    rt_hw_mmu_setmtt(0x00000000, 0x000FFFFF, 0x00000000, RW_NCNB|TEX_MEM);
+    rt_hw_mmu_setmtt(0x43B00000, 0x43FFFFFF, 0x43B00000, RW_NCNB|TEX_MEM);
     rt_cpu_tlb_set(MMUTable);
-
+    
+    rt_hw_set_domain_register(0xFFFFFFFF);
+    disable_strict_align_check();
     rt_cpu_mmu_enable();
 
     rt_hw_cpu_icache_enable();
