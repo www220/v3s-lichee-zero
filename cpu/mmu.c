@@ -17,7 +17,6 @@
 #include <board.h>
 
 #include "cp15.h"
-#include "cortex_a.h"
 
 #define DESC_SEC       (0x2)
 #define CB             (3<<2)  //cache_on, write_back
@@ -191,13 +190,13 @@ void rt_hw_mmu_init(void)
     /* set page table */
     /* 4G 1:1 memory */
     rt_hw_mmu_setmtt(0x00000000, 0xFFFFFFFF, 0x00000000, RW_NCNB);
-    rt_hw_mmu_setmtt(0x40000000, 0x43AFFFFF, 0x40000000, RW_CB);
+    rt_hw_mmu_setmtt(0x40000000, 0x43BFFFFF, 0x40000000, RW_CB);
     rt_hw_mmu_setmtt(0x00000000, 0x000FFFFF, 0x00000000, RW_NCNB|TEX_MEM);
-    rt_hw_mmu_setmtt(0x43B00000, 0x43FFFFFF, 0x43B00000, RW_NCNB|TEX_MEM);
+    rt_hw_mmu_setmtt(0x43C00000, 0x43FFFFFF, 0x43C00000, RW_NCNB|TEX_MEM);
     rt_cpu_tlb_set(MMUTable);
     
     rt_hw_set_domain_register(0xFFFFFFFF);
-    disable_strict_align_check();
+    rt_cpu_align_check_disable();
     rt_cpu_mmu_enable();
 
     rt_hw_cpu_icache_enable();

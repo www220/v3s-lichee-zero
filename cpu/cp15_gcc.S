@@ -23,17 +23,6 @@
  * 2013-07-05     Bernard      the first version
  */
 
-.globl rt_cpu_get_smp_id
-rt_cpu_get_smp_id:
-    mrc     p15, #0, r0, c0, c0, #5
-    bx      lr
-
-.globl rt_cpu_vector_set_base
-rt_cpu_vector_set_base:
-    mcr     p15, #0, r0, c12, c0, #0
-    dsb
-    bx      lr
-
 .globl rt_hw_cpu_dcache_enable
 rt_hw_cpu_dcache_enable:
     mrc     p15, #0, r0, c1, c0, #0
@@ -120,7 +109,7 @@ rt_hw_cpu_icache_disable:
 rt_cpu_mmu_disable:
     mcr     p15, #0, r0, c8, c7, #0    @ invalidate tlb
     mrc     p15, #0, r0, c1, c0, #0
-    bic     r0, r0, #1
+    bic     r0,  r0, #0x00000001
     mcr     p15, #0, r0, c1, c0, #0    @ clear mmu bit
     dsb
     bx      lr
@@ -128,13 +117,25 @@ rt_cpu_mmu_disable:
 .globl rt_cpu_mmu_enable
 rt_cpu_mmu_enable:
     mrc     p15, #0, r0, c1, c0, #0
-    orr     r0, r0, #0x001
+    orr     r0,  r0, #0x00000001
     mcr     p15, #0, r0, c1, c0, #0    @ set mmu enable bit
     dsb
+    bx      lr
+
+.global rt_cpu_align_check_disable
+rt_cpu_align_check_disable:
+    mrc     p15, #0, r0, c1, c0, #0
+    bic     r0,  r0, #0x00000002
+    mcr     p15, #0, r0, c1, c0, #0    @ clear align_check bit
     bx      lr
 
 .globl rt_cpu_tlb_set
 rt_cpu_tlb_set:
     mcr     p15, #0, r0, c2, c0, #0
     dmb
+    bx      lr
+
+.global get_arm_private_peripheral_base
+get_arm_private_peripheral_base: 
+    mrc     p15, 4, r0, c15, c0, #0    @ Read periph base address
     bx      lr

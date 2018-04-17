@@ -30,7 +30,8 @@
 #ifndef __GIC_H__
 #define __GIC_H__
 
-#include "sdk_types.h"
+#include <stdbool.h>
+#include <sys/types.h>
 
 //! @addtogroup gic
 //! @{

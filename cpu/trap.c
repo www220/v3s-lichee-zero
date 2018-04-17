@@ -17,10 +17,8 @@
 #include <board.h>
 
 #include "armv7.h"
-
 #include "gic.h"
 
-extern struct rt_thread *rt_current_thread;
 #ifdef RT_USING_FINSH
 extern long list_thread(void);
 #endif
@@ -56,7 +54,7 @@ void rt_hw_trap_undef(struct rt_hw_exp_stack *regs)
 #ifdef RT_USING_FINSH
     list_thread();
 #endif
-//    rt_hw_cpu_shutdown();
+    rt_hw_cpu_shutdown();
 }
 
 /**
@@ -75,7 +73,7 @@ void rt_hw_trap_swi(struct rt_hw_exp_stack *regs)
 #ifdef RT_USING_FINSH
     list_thread();
 #endif
-//    rt_hw_cpu_shutdown();
+    rt_hw_cpu_shutdown();
 }
 
 /**
@@ -93,7 +91,7 @@ void rt_hw_trap_pabt(struct rt_hw_exp_stack *regs)
 #ifdef RT_USING_FINSH
     list_thread();
 #endif
-//    rt_hw_cpu_shutdown();
+    rt_hw_cpu_shutdown();
 }
 
 /**
@@ -111,7 +109,7 @@ void rt_hw_trap_dabt(struct rt_hw_exp_stack *regs)
 #ifdef RT_USING_FINSH
     list_thread();
 #endif
-//    rt_hw_cpu_shutdown();
+    rt_hw_cpu_shutdown();
 }
 
 /**
@@ -128,7 +126,7 @@ void rt_hw_trap_resv(struct rt_hw_exp_stack *regs)
 #ifdef RT_USING_FINSH
     list_thread();
 #endif
-//    rt_hw_cpu_shutdown();
+    rt_hw_cpu_shutdown();
 }
 
 void rt_hw_trap_irq(void)

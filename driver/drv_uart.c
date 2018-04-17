@@ -27,148 +27,81 @@
 #include <rtdevice.h>
 
 #include "board.h"
-#include "drv_uart.h"
-
 #include "interrupt.h"
 
-struct device_uart
-{
-    rt_uint32_t hw_base;
-
-    rt_uint32_t irqno;
-    char name[RT_NAME_MAX];
-};
-
-static rt_err_t uart_configure          (struct rt_serial_device *serial, struct serial_configure *cfg);
-static rt_err_t uart_control            (struct rt_serial_device *serial, int cmd, void *arg);
-static int      uart_putc               (struct rt_serial_device *serial, char c);
-static int      uart_getc               (struct rt_serial_device *serial);
-static rt_size_t uart_dma_transmit      (struct rt_serial_device *serial, rt_uint8_t *buf, rt_size_t size, int direction);
-
-static void     uart_irq_handler        (int irqno, void *param);
-
-const struct rt_uart_ops _uart_ops =
-{
-    uart_configure,
-    uart_control,
-    uart_putc,
-    uart_getc,
-    uart_dma_transmit
-};
-
-
-#define UART0_BASE      0x01c28000
 #define UART_THR        0x00
 #define UART_RHB        0x00
+#define UART_DLL        0x00
+#define UART_DLH        0x04
+#define UART_FCR        0x08
+#define UART_IER        0X04
+#define UART_IIR        0x08
+#define UART_LSR        0x14
+#define UART_MSR        0x18
+#define UART_SCH        0x1c
 #define UART_USR        0x7c
-#define UART_INTERRUPT  0X04
-#define UART_INTT_STA   0x08
+#define __REG(x)     (*((volatile ulong *)(x)))
 
-static struct rt_serial_device  serial1;
-
-void uart_interrupt(void)
+struct hw_uart_device
 {
-    rt_interrupt_enter();
-    
-    uart_irq_handler(0,&serial1);
+    uint32_t base;
+    char *name;
+    int irqno;
+};
 
-    rt_interrupt_leave();
-}
-
-
-
-/*
- * UART Initiation
- */
-int rt_hw_uart_init(void)
+static void rt_hw_uart_isr(int vector, void *param)
 {
-    volatile unsigned int * uart_addr; //串口中断开关地址
+    struct rt_serial_device *serial = (struct rt_serial_device *)param;
+    struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
+    RT_ASSERT(uart != RT_NULL);
 
-    struct rt_serial_device *serial;
-    struct device_uart      *uart;
-    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
-
-    {
-        
-        static struct device_uart       uart1;
-
-        serial  = &serial1;
-        uart    = &uart1;
-
-        serial->ops              = &_uart_ops;
-        serial->config           = config;
-        serial->config.baud_rate = 115200;
-
-        uart->hw_base   = 0; // UART0_BASE;
-        uart->irqno     = 0; // IRQ_UART0;
-
-        rt_hw_serial_register(serial,
-                              "uart",
-                              RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX,
-                              uart);
+    volatile ulong data = 0;
+    int ir = __REG(uart->base + UART_IIR)&0x0f;
+    if (ir == 0x06){
+        data = __REG(uart->base + UART_LSR);
+    }else if (ir == 0x04 || ir == 0x0c){
+        rt_hw_serial_isr(serial, RT_SERIAL_EVENT_RX_IND);
+    }else if (ir == 0x00){
+        data = __REG(uart->base + UART_MSR);
+    }else if (ir == 0x02){
+        data = __REG(uart->base + UART_IIR);
+    }else if (ir == 0x07){
+        data = __REG(uart->base + UART_USR);
     }
-
-    /* 打开串口中断 */
-    enable_interrupt(32,0,5);
-    /* 设置串口中断服务函数 */
-    register_interrupt_routine(32,uart_interrupt);
-
-    /* 打开接收中断 */
-    uart_addr = UART0_BASE + UART_INTERRUPT;
-    *uart_addr |= 0x01;
-
-    return 0;
+    //disable gcc unused
+    (void)data;
 }
 
-/*
- * UART interface
- */
+extern void NS16550_init(void* com_port, int baud_divisor);
+extern int ns16550_calc_divisor(void* com_port, int clock, int baudrate);
 static rt_err_t uart_configure (struct rt_serial_device *serial, struct serial_configure *cfg)
 {
-     rt_uint32_t baud_div;
-     struct device_uart * uart;
+    struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
+    RT_ASSERT(uart != RT_NULL);
 
-     RT_ASSERT(serial != RT_NULL);
-     serial->config = *cfg;
+	int clock_divisor = ns16550_calc_divisor((void*)uart->base, 24000000, cfg->baud_rate);
+	NS16550_init((void*)uart->base, clock_divisor);
 
-     uart = serial->parent.user_data;
-     RT_ASSERT(uart != RT_NULL);
-
-     /* Init UART Hardware */
-
-     /* Enable UART clock */
-
-     /* Set both receiver and transmitter in UART mode (not SIR) */
-
-     /* Set databits, stopbits and parity. (8-bit data, 1 stopbit, no parity) */
-
-     /* set baudrate */
-
-     return (RT_EOK);
+    return RT_EOK;
 }
 
-static rt_err_t uart_control (struct rt_serial_device *serial, int cmd, void *arg)
+static rt_err_t uart_control(struct rt_serial_device *serial, int cmd, void *arg)
 {
-    struct device_uart * uart;
-
-    uart = serial->parent.user_data;
-
+    struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
     RT_ASSERT(uart != RT_NULL);
 
     switch (cmd)
     {
     case RT_DEVICE_CTRL_CLR_INT:
-        /* Disable the UART Interrupt */
+        /* disable rx irq */
+        __REG(uart->base + UART_IER) = 0x00;
         rt_hw_interrupt_mask(uart->irqno);
         break;
 
     case RT_DEVICE_CTRL_SET_INT:
-        /* install interrupt */
-        rt_hw_interrupt_install(uart->irqno, uart_irq_handler,
-                                serial, uart->name);
+        /* enable rx irq */
+        __REG(uart->base + UART_IER) |= 0x01;
         rt_hw_interrupt_umask(uart->irqno);
-
-        /* Enable the UART Interrupt */
         break;
     }
 
@@ -177,70 +110,55 @@ static rt_err_t uart_control (struct rt_serial_device *serial, int cmd, void *ar
 
 static int uart_putc (struct rt_serial_device *serial, char c)
 {
-    struct device_uart* uart;
-    volatile unsigned char * sed_buf = UART0_BASE + UART_THR;
-    volatile unsigned char * sta     = UART0_BASE + UART_USR;
+    struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
+    RT_ASSERT(uart != RT_NULL);
 
-    uart = serial->parent.user_data;
-
-    /* FIFO status, contain valid data */
-    while(!(*sta & 0x02)); //等待发送缓冲区非满
- //   while((*sta & 0x01));
-    
-    *sed_buf = c;
-
-    /* write data */
-
-    return (1);
+    while ((__REG(uart->base + UART_USR) & 0x20)==0x00);
+    __REG(uart->base + UART_THR) = c;
+    return 1;
 }
 
 static int uart_getc (struct rt_serial_device *serial)
 {
-    int ch;
-    volatile unsigned int * p_temp;  //临时指针
-    struct device_uart* uart = serial->parent.user_data;
+    struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
+    RT_ASSERT(uart != RT_NULL);
 
-    /* Receive Data Available */
-    RT_ASSERT(serial != RT_NULL);
-
-    ch = -1;
-    p_temp = UART0_BASE + UART_USR;
-    if(*p_temp & 0x08)
-    {
-            p_temp = UART0_BASE + UART_RHB;
-            ch = *p_temp & 0xff;
-    }
-
+    int ch = -1;
+    if ((__REG(uart->base + UART_USR) & 0x01) == 0x01)
+        ch = (__REG(uart->base + UART_RHB) & 0xff);
     return ch;
 }
 
-static rt_size_t uart_dma_transmit (struct rt_serial_device *serial, rt_uint8_t *buf, rt_size_t size, int direction)
+const struct rt_uart_ops _uart_ops =
 {
-    return (0);
+    uart_configure,
+    uart_control,
+    uart_putc,
+    uart_getc,
+};
+
+static struct hw_uart_device _uart0_device =
+{
+    UART0_BASE,
+    "uart",
+    32
+};
+static struct rt_serial_device _serial0;
+
+void uart_pin_config(struct rt_serial_device *dev, struct hw_uart_device *uart)
+{
+    rt_hw_interrupt_install(uart->irqno, rt_hw_uart_isr, dev, uart->name);
+    rt_hw_interrupt_mask(uart->irqno);
+    rt_hw_serial_register(dev, uart->name, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX, uart);
 }
 
-/* UART ISR */
-static void uart_irq_handler(int irqno, void *param)
+int rt_hw_uart_init(void)
 {
-    rt_ubase_t isr;
-    struct rt_serial_device *serial = (struct rt_serial_device*)param;
-    struct device_uart* uart = serial->parent.user_data;
+    struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
 
-    
+    _serial0.ops = &_uart_ops;
+    _serial0.config = config;
+    uart_pin_config(&_serial0, &_uart0_device);
 
-    /* read interrupt status and clear it */
-    if (1) /* rx ind */
-    {
-        rt_hw_serial_isr(serial,RT_SERIAL_EVENT_RX_IND);
-    }
-
-    if(0) /* tx done */
-    {
-        rt_hw_serial_isr(serial,RT_SERIAL_EVENT_TX_DONE);
-    }
-    
-    rt_hw_interrupt_clear(32);
-
-    
-
+    return 0;
 }

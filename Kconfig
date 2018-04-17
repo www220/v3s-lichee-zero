@@ -18,5 +18,30 @@ config $PKGS_DIR
     option env="PKGS_ROOT"
     default "packages"
 
+config RT_NAME_MAX
+    int
+    default 16
+config RT_USING_DFS
+    bool
+    default n
+config FINSH_USING_MSH_ONLY
+    bool
+    default y
+config RT_TICK_PER_SECOND
+    int
+    default 1000
+config RT_USING_INTERRUPT_INFO
+    bool
+    default y
+config RT_SERIAL_RB_BUFSZ
+    int
+    default 4096
+config RT_USING_SERIAL
+    bool
+    default y
+config RT_USING_PIN
+    bool
+    default y
+
 source "$RTT_DIR/KConfig"
 source "$PKGS_DIR/KConfig"

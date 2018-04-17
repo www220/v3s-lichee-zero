@@ -6,10 +6,6 @@
 void led_thread_entry(void* parameter)
 {
     unsigned char count = 0;       //计数器
-    
-    extern int _hw_pin_init(void);
-    _hw_pin_init();
-
     rt_pin_mode(0,PIN_MODE_OUTPUT);
     rt_pin_mode(1,PIN_MODE_OUTPUT);
     rt_pin_mode(2,PIN_MODE_OUTPUT);

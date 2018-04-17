@@ -15,32 +15,16 @@
 
 #include <rthw.h>
 #include <rtthread.h>
-
-#include <irq_numbers.h>
 #include <interrupt.h>
-
 #include <gic.h>
-#include "cp15.h"
-
-#define MAX_HANDLERS                IMX_INTERRUPT_COUNT
-
-extern volatile rt_uint8_t rt_interrupt_nest;
 
 /* exception and interrupt handler table */
+#define MAX_HANDLERS 160
 struct rt_irq_desc isr_table[MAX_HANDLERS];
-
+extern volatile rt_uint8_t rt_interrupt_nest;
 rt_uint32_t rt_interrupt_from_thread;
 rt_uint32_t rt_interrupt_to_thread;
 rt_uint32_t rt_thread_switch_interrupt_flag;
-
-extern void rt_cpu_vector_set_base(unsigned int addr);
-extern int system_vectors;
-
-/* keep compatible with platform SDK */
-void register_interrupt_routine(uint32_t irq_id, irq_hdlr_t isr)
-{
-    rt_hw_interrupt_install(irq_id, (rt_isr_handler_t)isr, NULL, "unknown");
-}
 
 void enable_interrupt(uint32_t irq_id, uint32_t cpu_id, uint32_t priority)
 {
@@ -56,31 +40,15 @@ void disable_interrupt(uint32_t irq_id, uint32_t cpu_id)
     gic_set_cpu_target(irq_id, cpu_id, false);
 }
 
-static void rt_hw_vector_init(void)
-{
-    int sctrl;
-    unsigned int *src = (unsigned int *)&system_vectors;
-
-    /* C12-C0 is only active when SCTLR.V = 0 */
-    asm volatile ("mrc p15, #0, %0, c1, c0, #0"
-                  :"=r" (sctrl));
-    sctrl &= ~(1 << 13);
-    asm volatile ("mcr p15, #0, %0, c1, c0, #0"
-                  :
-                  :"r" (sctrl));
-
-    asm volatile ("mcr p15, #0, %0, c12, c0, #0"
-                  :
-                  :"r" (src));
-}
-
 /**
  * This function will initialize hardware interrupt
  */
 void rt_hw_interrupt_init(void)
 {
-    rt_hw_vector_init();
     gic_init();
+
+    /* init exceptions table */
+    rt_memset(isr_table, 0x00, sizeof(isr_table));
 
     /* init interrupt nest, and context in thread sp */
     rt_interrupt_nest = 0;
@@ -126,6 +94,7 @@ rt_isr_handler_t rt_hw_interrupt_install(int vector, rt_isr_handler_t handler,
         {
 #ifdef RT_USING_INTERRUPT_INFO
             rt_strncpy(isr_table[vector].name, name, RT_NAME_MAX);
+            isr_table[vector].counter = 0;
 #endif /* RT_USING_INTERRUPT_INFO */
             isr_table[vector].handler = handler;
             isr_table[vector].param = param;
@@ -136,17 +105,25 @@ rt_isr_handler_t rt_hw_interrupt_install(int vector, rt_isr_handler_t handler,
     return old_handler;
 }
 
-/**
- * Trigger a software IRQ
- *
- * Since we are running in single core, the target CPU are always CPU0.
- */
-void rt_hw_interrupt_trigger(int vector)
+#ifdef RT_USING_FINSH
+void list_irq(void)
 {
-    // arm_gic_trigger(0, 1, vector);
+    int irq;
+    for (irq = 0; irq < MAX_HANDLERS; irq++)
+    {
+        if (!isr_table[irq].handler) continue;
+#ifdef RT_USING_INTERRUPT_INFO
+        rt_kprintf("nr:%4d, name: %*.s, count: %8d, handler: 0x%p, param: 0x%08x\r\n",
+                irq, RT_NAME_MAX, isr_table[irq].name, isr_table[irq].counter,
+                isr_table[irq].handler, isr_table[irq].param);
+#else
+        rt_kprintf("nr:%4d, handler: 0x%p, param: 0x%08x\r\n",
+                irq, isr_table[irq].handler, isr_table[irq].param);
+#endif
+    }
 }
 
-void rt_hw_interrupt_clear(int vector)
-{
-    gic_write_end_of_irq(vector);
-}
+#include <finsh.h>
+FINSH_FUNCTION_EXPORT(list_irq, list system irq);
+MSH_CMD_EXPORT(list_irq, list system irq);
+#endif

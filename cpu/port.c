@@ -1,6 +1,7 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include "armv7.h"
+
 /**
  * This function will initialize thread stack
  *
@@ -43,20 +44,20 @@ rt_uint8_t *rt_hw_stack_init(void *tentry, void *parameter,
 	return (rt_uint8_t *)stk;
 }
 
+/** reset CPU */
+void rt_hw_cpu_reset()
+{
+	rt_kprintf("Restarting system...\n");
+	rt_hw_interrupt_disable();
+	while(1);
+	/* NEVER REACHED */
+}
 
-
-/**
- * This function finds the first bit set (beginning with the least significant bit)
- * in value and return the index of that bit.
- *
- * Bits are numbered starting at 1 (the least significant bit).  A return value of
- * zero from any of these functions means that the argument was zero.
- *
- * @return return the index of the first bit set. If value is 0, then this function
- * shall return 0.
- */
-// int __rt_ffs(int value)
-// {
-    // return __builtin_ffs(value);
-// }
-
+/** shutdown CPU */
+void rt_hw_cpu_shutdown()
+{
+	rt_kprintf("shutdown...\n");
+	rt_hw_interrupt_disable();
+	while(1);
+	/* NEVER REACHED */
+}

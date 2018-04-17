@@ -30,7 +30,7 @@
 #include <assert.h>
 #include "gic.h"
 #include "gic_registers.h"
-#include "cortex_a.h"
+#include "cp15.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Prototypes

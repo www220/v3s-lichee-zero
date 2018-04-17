@@ -33,15 +33,14 @@
 .equ I_Bit,           0x80            @ when I bit is set, IRQ is disabled
 .equ F_Bit,           0x40            @ when F bit is set, FIQ is disabled
 
-.equ UND_Stack_Size,     0x00000000
+.equ UND_Stack_Size,     0x00000100
 .equ SVC_Stack_Size,     0x00000100
-.equ ABT_Stack_Size,     0x00000000
-.equ RT_FIQ_STACK_PGSZ,  0x00000000
+.equ ABT_Stack_Size,     0x00000100
+.equ RT_FIQ_STACK_PGSZ,  0x00000100
 .equ RT_IRQ_STACK_PGSZ,  0x00000100
 .equ USR_Stack_Size,     0x00000100
 
-#define ISR_Stack_Size  (UND_Stack_Size + SVC_Stack_Size + ABT_Stack_Size + \
-                 RT_FIQ_STACK_PGSZ + RT_IRQ_STACK_PGSZ)
+#define ISR_Stack_Size  (UND_Stack_Size + SVC_Stack_Size + ABT_Stack_Size + RT_FIQ_STACK_PGSZ + RT_IRQ_STACK_PGSZ)
 
 .section .data.share.isr
 /* stack */
@@ -58,12 +57,20 @@ stack_top:
 /* reset entry */
 .globl _reset
 _reset:
-    bl      rt_cpu_mmu_disable
     /* set the cpu to SVC32 mode and disable interrupt */
     mrs     r0, cpsr
     bic     r0, r0, #0x1f
     orr     r0, r0, #0x13
     msr     cpsr_c, r0
+
+    /* set V=0 in CP15 SCTLR register - for VBAR to point to vector */
+    mrc	p15, 0, r0, c1, c0, 0	@ Read CP15 SCTLR Register
+    bic	r0, #(1<<13)            @ V = 0
+    mcr	p15, 0, r0, c1, c0, 0	@ Write CP15 SCTLR Register
+
+    /* set vector address in CP15 VBAR register */
+    ldr	r0, =system_vectors
+    mcr	p15, 0, r0, c12, c0, 0	@Set VBAR
 
     /* setup stack */
     bl      stack_setup
