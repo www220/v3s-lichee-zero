@@ -50,7 +50,6 @@ void NS16550_puts(void *com_port, const char *s)
 
 void rt_hw_board_init(void)
 {
-    NS16550_puts((void *)UART0_BASE,"tttt1\r\n");
     // init mmu
     rt_hw_mmu_init();
     // init interrupt

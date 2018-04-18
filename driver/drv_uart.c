@@ -31,14 +31,10 @@
 
 #define UART_THR        0x00
 #define UART_RHB        0x00
-#define UART_DLL        0x00
-#define UART_DLH        0x04
-#define UART_FCR        0x08
 #define UART_IER        0X04
 #define UART_IIR        0x08
 #define UART_LSR        0x14
 #define UART_MSR        0x18
-#define UART_SCH        0x1c
 #define UART_USR        0x7c
 #define __REG(x)     (*((volatile ulong *)(x)))
 
@@ -113,7 +109,7 @@ static int uart_putc (struct rt_serial_device *serial, char c)
     struct hw_uart_device *uart = (struct hw_uart_device *)serial->parent.user_data;
     RT_ASSERT(uart != RT_NULL);
 
-    while ((__REG(uart->base + UART_USR) & 0x20)==0x00);
+    while ((__REG(uart->base + UART_USR) & 0x02) == 0x00);
     __REG(uart->base + UART_THR) = c;
     return 1;
 }
@@ -124,7 +120,7 @@ static int uart_getc (struct rt_serial_device *serial)
     RT_ASSERT(uart != RT_NULL);
 
     int ch = -1;
-    if ((__REG(uart->base + UART_USR) & 0x01) == 0x01)
+    if ((__REG(uart->base + UART_USR) & 0x08) == 0x08)
         ch = (__REG(uart->base + UART_RHB) & 0xff);
     return ch;
 }

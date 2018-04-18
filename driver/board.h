@@ -41,6 +41,53 @@ int rt_hw_uart_init(void);
 void __udelay(unsigned long usec);
 ulong tick_read_timer(void);
 
+/* GPIO bank sizes */
+#define SUNXI_GPIO_A_NR		32
+#define SUNXI_GPIO_B_NR		32
+#define SUNXI_GPIO_C_NR		32
+#define SUNXI_GPIO_D_NR		32
+#define SUNXI_GPIO_E_NR		32
+#define SUNXI_GPIO_F_NR		32
+#define SUNXI_GPIO_G_NR		32
+#define SUNXI_GPIO_H_NR		32
+#define SUNXI_GPIO_I_NR		32
+#define SUNXI_GPIO_L_NR		32
+#define SUNXI_GPIO_M_NR		32
+
+#define SUNXI_GPIO_NEXT(__gpio) \
+	((__gpio##_START) + (__gpio##_NR) + 0)
+
+enum sunxi_gpio_number {
+	SUNXI_GPIO_A_START = 0,
+	SUNXI_GPIO_B_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_A),
+	SUNXI_GPIO_C_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_B),
+	SUNXI_GPIO_D_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_C),
+	SUNXI_GPIO_E_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_D),
+	SUNXI_GPIO_F_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_E),
+	SUNXI_GPIO_G_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_F),
+	SUNXI_GPIO_H_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_G),
+	SUNXI_GPIO_I_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_H),
+	SUNXI_GPIO_L_START = 352,
+	SUNXI_GPIO_M_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_L),
+	SUNXI_GPIO_N_START = SUNXI_GPIO_NEXT(SUNXI_GPIO_M),
+	SUNXI_GPIO_AXP0_START = 1024,
+};
+
+/* SUNXI GPIO number definitions */
+#define SUNXI_GPA(_nr)	(SUNXI_GPIO_A_START + (_nr))
+#define SUNXI_GPB(_nr)	(SUNXI_GPIO_B_START + (_nr))
+#define SUNXI_GPC(_nr)	(SUNXI_GPIO_C_START + (_nr))
+#define SUNXI_GPD(_nr)	(SUNXI_GPIO_D_START + (_nr))
+#define SUNXI_GPE(_nr)	(SUNXI_GPIO_E_START + (_nr))
+#define SUNXI_GPF(_nr)	(SUNXI_GPIO_F_START + (_nr))
+#define SUNXI_GPG(_nr)	(SUNXI_GPIO_G_START + (_nr))
+#define SUNXI_GPH(_nr)	(SUNXI_GPIO_H_START + (_nr))
+#define SUNXI_GPI(_nr)	(SUNXI_GPIO_I_START + (_nr))
+#define SUNXI_GPL(_nr)	(SUNXI_GPIO_L_START + (_nr))
+#define SUNXI_GPM(_nr)	(SUNXI_GPIO_M_START + (_nr))
+#define SUNXI_GPN(_nr)	(SUNXI_GPIO_N_START + (_nr))
+#define SUNXI_GPAXP0(_nr)	(SUNXI_GPIO_AXP0_START + (_nr))
+
 int gpio_direction_input(unsigned gpio);
 int gpio_direction_output(unsigned gpio, int value);
 int gpio_direction_mode(unsigned gpio, int mode);

@@ -15,7 +15,7 @@
 #include <asm/io.h>
 
 #define UART_LCRVAL UART_LCR_8N1		/* 8 data, 1 stop, no parity */
-#define UART_MCRVAL 0x00
+#define UART_MCRVAL (UART_MCR_DTR | UART_MCR_RTS)
 #define UART_FCRVAL (UART_FCR_FIFO_EN | UART_FCR_RXSR | UART_FCR_TXSR | UART_FCR_TRIGGER_8)	/* Clear & enable FIFOs */
 #define CONFIG_SYS_NS16550_IER  0x00
 

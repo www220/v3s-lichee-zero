@@ -42,6 +42,23 @@ config RT_USING_SERIAL
 config RT_USING_PIN
     bool
     default y
+menu "Bsp definition options"
+    choice 
+        prompt "Dynamic Memory Management"
+        default RT_USING_SLAB
+        config RT_USING_NOHEAP
+            bool "Disable Heap"
+        config RT_USING_SMALL_MEM
+            bool "Small Memory Algorithm"
+        config RT_USING_SLAB
+            bool "SLAB Algorithm for large memory"
+        if RT_USING_MEMHEAP
+        config RT_USING_MEMHEAP_AS_HEAP
+            bool "Use all of memheap objects as heap"
+        endif
+    endchoice
+endmenu
+
 
 source "$RTT_DIR/KConfig"
 source "$PKGS_DIR/KConfig"
