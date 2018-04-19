@@ -9,6 +9,7 @@
 #include <common.h>
 #include <asm/io.h>
 #include <asm/arch/timer.h>
+#include <watchdog.h>
 
 #define TIMER_MODE   (0x0 << 7)	/* continuous mode */
 #define TIMER_DIV    (0x0 << 4)	/* pre scale 1 */
@@ -76,3 +77,32 @@ void __udelay(unsigned long usec)
 		last = now;
 	}
 }
+
+#ifndef CONFIG_WD_PERIOD
+# define CONFIG_WD_PERIOD	(10 * 1000 * 1000)	/* 10 seconds default */
+#endif
+
+extern ulong rt_tick_get();
+ulong get_timer(ulong base)
+{
+	return rt_tick_get() - base;
+}
+
+void udelay(unsigned long usec)
+{
+	ulong kv;
+
+	do {
+		WATCHDOG_RESET();
+		kv = usec > CONFIG_WD_PERIOD ? CONFIG_WD_PERIOD : usec;
+		__udelay (kv);
+		usec -= kv;
+	} while(usec);
+}
+
+void mdelay(unsigned long msec)
+{
+	while (msec--)
+		udelay(1000);
+}
+

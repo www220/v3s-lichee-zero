@@ -38,7 +38,8 @@ void rt_hw_mmu_init(void);
 int rt_hw_pin_init(void);
 int rt_hw_uart_init(void);
 
-void __udelay(unsigned long usec);
+void udelay(unsigned long usec);
+void mdelay(unsigned long msec);
 ulong tick_read_timer(void);
 
 /* GPIO bank sizes */
@@ -97,7 +98,10 @@ int gpio_set_value(unsigned gpio, int value);
 #define UART0_BASE 0x01c28000
 #define UART1_BASE 0x01c28400
 #define UART2_BASE 0x01c28800
+
 void NS16550_puts(void *com_port, const char *s);
 void NS16550_putc(void *com_port, char c);
+char NS16550_getc(void *com_port);
+int NS16550_tstc(void *com_port);
 
 #endif

@@ -104,3 +104,23 @@ void NS16550_putc(NS16550_t com_port, char c)
 	if (c == '\n')
 		WATCHDOG_RESET();
 }
+
+#ifndef CONFIG_NS16550_MIN_FUNCTIONS
+char NS16550_getc(NS16550_t com_port)
+{
+	while ((serial_in(&com_port->lsr) & UART_LSR_DR) == 0) {
+#if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_USB_TTY)
+		extern void usbtty_poll(void);
+		usbtty_poll();
+#endif
+		WATCHDOG_RESET();
+	}
+	return serial_in(&com_port->rbr);
+}
+
+int NS16550_tstc(NS16550_t com_port)
+{
+	return (serial_in(&com_port->lsr) & UART_LSR_DR) != 0;
+}
+
+#endif /* CONFIG_NS16550_MIN_FUNCTIONS */

@@ -18,10 +18,38 @@ config $PKGS_DIR
     option env="PKGS_ROOT"
     default "packages"
 
+
 config RT_NAME_MAX
     int
     default 16
+config RT_DEBUG_INIT
+    int
+    default 1
 config RT_USING_DFS
+    bool
+    default y
+config RT_USING_POSIX
+    bool
+    default n
+config DFS_FILESYSTEMS_MAX
+    int
+    default 8
+config DFS_FILESYSTEM_TYPES_MAX
+    int
+    default 8
+config DFS_FD_MAX
+    int
+    default 32
+config RT_USING_DFS_ELMFAT
+    bool
+    default n
+config RT_USING_DFS_ROMFS
+    bool
+    default y
+config RT_USING_DFS_DEVFS
+    bool
+    default y
+config RT_USING_DFS_NET
     bool
     default n
 config FINSH_USING_MSH_ONLY
@@ -42,6 +70,21 @@ config RT_USING_SERIAL
 config RT_USING_PIN
     bool
     default y
+config RT_USING_I2C
+    bool
+    default y
+config RT_USING_SDIO
+    bool
+    default n
+config RT_USING_SPI
+    bool
+    default y
+config RT_USING_SFUD
+    bool
+    default y
+config RT_USING_LWIP
+    bool
+    default y
 menu "Bsp definition options"
     choice 
         prompt "Dynamic Memory Management"
@@ -56,6 +99,14 @@ menu "Bsp definition options"
         config RT_USING_MEMHEAP_AS_HEAP
             bool "Use all of memheap objects as heap"
         endif
+    endchoice
+    choice
+        prompt "lwIP version"
+        default RT_USING_LWIP202
+        config RT_USING_LWIP141
+            bool "lwIP v1.4.1"
+        config RT_USING_LWIP202
+            bool "lwIP v2.0.2"
     endchoice
 endmenu
 

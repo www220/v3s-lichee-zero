@@ -75,3 +75,6 @@ void rt_hw_board_init(void)
     rt_components_board_init();
 #endif
 }
+
+int ctrlc(void) { return 0; }
+

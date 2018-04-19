@@ -8,6 +8,9 @@
 #ifndef __COMMON_H_
 #define __COMMON_H_	1
 
+#define snprintf(...) rt_snprintf(__VA_ARGS__)
+#define printf(...) rt_kprintf(__VA_ARGS__)
+
 #ifndef __ASSEMBLY__		/* put C only stuff in this section */
 
 typedef unsigned char		uchar;
@@ -125,7 +128,7 @@ typedef volatile unsigned char	vu_char;
 
 /* Show a message if DEBUG is defined in a file */
 #define debug(fmt, args...)			\
-	debug_cond(_DEBUG, fmt, ##args)
+	debug_cond(!_DEBUG, fmt, ##args)
 
 /* Show a message if not in SPL */
 #define warn_non_spl(fmt, args...)			\
@@ -854,53 +857,6 @@ char *	strmhz(char *buf, unsigned long hz);
 void srand(unsigned int seed);
 unsigned int rand(void);
 unsigned int rand_r(unsigned int *seedp);
-
-/*
- * STDIO based functions (can always be used)
- */
-/* serial stuff */
-int	serial_printf (const char *fmt, ...)
-		__attribute__ ((format (__printf__, 1, 2)));
-/* stdin */
-int	getc(void);
-int	tstc(void);
-
-/* stdout */
-#if !defined(CONFIG_SPL_BUILD) || \
-	(defined(CONFIG_TPL_BUILD) && defined(CONFIG_TPL_SERIAL_SUPPORT)) || \
-	(defined(CONFIG_SPL_BUILD) && !defined(CONFIG_TPL_BUILD) && \
-		defined(CONFIG_SPL_SERIAL_SUPPORT))
-void	putc(const char c);
-void	puts(const char *s);
-int	printf(const char *fmt, ...)
-		__attribute__ ((format (__printf__, 1, 2)));
-int	vprintf(const char *fmt, va_list args);
-#else
-#define	putc(...) do { } while (0)
-#define puts(...) do { } while (0)
-#define printf(...) do { } while (0)
-#define vprintf(...) do { } while (0)
-#endif
-
-/* stderr */
-#define eputc(c)		fputc(stderr, c)
-#define eputs(s)		fputs(stderr, s)
-#define eprintf(fmt,args...)	fprintf(stderr,fmt ,##args)
-
-/*
- * FILE based functions (can only be used AFTER relocation!)
- */
-#define stdin		0
-#define stdout		1
-#define stderr		2
-#define MAX_FILES	3
-
-int	fprintf(int file, const char *fmt, ...)
-		__attribute__ ((format (__printf__, 2, 3)));
-void	fputs(int file, const char *s);
-void	fputc(int file, const char c);
-int	ftstc(int file);
-int	fgetc(int file);
 
 /* lib/gzip.c */
 int gzip(void *dst, unsigned long *lenp,
