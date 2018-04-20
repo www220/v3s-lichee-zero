@@ -528,7 +528,7 @@ int miiphy_is_1000base_x(const char *devname, unsigned char addr)
 #endif
 }
 
-#ifdef CONFIG_SYS_FAULT_ECHO_LINK_DOWN
+#ifndef CONFIG_SYS_FAULT_ECHO_LINK_DOWN
 /*****************************************************************************
  *
  * Determine link status

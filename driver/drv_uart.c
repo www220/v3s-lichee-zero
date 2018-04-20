@@ -64,8 +64,6 @@ static void rt_hw_uart_isr(int vector, void *param)
     }else if (ir == 0x07){
         data = __REG(uart->base + UART_USR);
     }
-    //disable gcc unused
-    (void)data;
 }
 
 extern void NS16550_init(void* com_port, int baud_divisor);

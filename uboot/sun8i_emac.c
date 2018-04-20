@@ -429,6 +429,7 @@ int _sun8i_emac_eth_init(struct emac_eth_dev *priv, u8 *enetaddr)
 	/* Enable RX/TX */
 	setbits_le32(priv->mac_reg + EMAC_RX_CTL0, BIT(31));
 	setbits_le32(priv->mac_reg + EMAC_TX_CTL0, BIT(31));
+	setbits_le32(priv->mac_reg + EMAC_INT_EN, BIT(8));
 
 	return 0;
 }
@@ -600,14 +601,14 @@ void sun8i_emac_eth_stop(struct emac_eth_dev *priv)
 }
 
 static struct emac_eth_dev indev;
-int sun8i_emac_eth_probe(const char* name, void **dev)
+int sun8i_emac_eth_probe(const char* name, unsigned char addr, void **dev)
 {
 	struct emac_eth_dev *priv = &indev;
     priv->sysctl_reg = 0x01c00030;
 	priv->mac_reg = (void *)0x01c30000;
     priv->variant = H3_EMAC;
     priv->use_internal_phy = true;
-    priv->phyaddr = 1;
+    priv->phyaddr = addr;
     priv->interface = PHY_INTERFACE_MODE_MII;
 
     miiphy_init();

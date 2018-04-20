@@ -7,14 +7,20 @@
 #include <netif/ethernetif.h>
 #include <lwipopts.h>
 
+#define PHY_ADDR            1
 #define MAX_ADDR_LEN 		6
+#define EMAC_INT_STA		0x08
+#define EMAC_INT_EN			0x0c
+
 #define _EMAC_DEVICE(eth)	(struct emac_device*)(eth)
+#define __REG(x)     (*((volatile ulong *)(x)))
 
 struct emac_device
 {
 	/* inherit from Ethernet device */
 	struct eth_device parent;
     /* uboot dev_t */
+    uint32_t base;
     void * dev_ptr;
 	/* interface address info. */
 	rt_uint8_t  dev_addr[MAX_ADDR_LEN];			/* MAC address	*/
@@ -23,10 +29,12 @@ static struct emac_device _emac;
 
 void _enet_isr(int vector, void *param)
 {
-    struct rt_device_t *dev = (struct rt_device_t *)param;
+    struct eth_device *dev = (struct eth_device *)param;
     struct emac_device *emac = _EMAC_DEVICE(dev);
     RT_ASSERT(emac != RT_NULL);
 
+    eth_device_ready(dev);
+    __REG(emac->base + EMAC_INT_STA) = 0x100;
 }
 
 extern int _sun8i_emac_eth_init(void *priv, rt_uint8_t *enetaddr);
@@ -93,7 +101,7 @@ rt_err_t _emac_tx(rt_device_t dev, struct pbuf* p)
     RT_ASSERT(emac != RT_NULL);
 
     for (q = p; q != NULL; q = q->next){
-        _sun8i_emac_eth_send(emac->dev_addr, q->payload, q->len);
+        _sun8i_emac_eth_send(emac->dev_ptr, q->payload, q->len);
     }
 
     return result;
@@ -129,10 +137,43 @@ struct pbuf *_emac_rx(rt_device_t dev)
     return p;
 }
 
-extern int sun8i_emac_eth_probe(const char* name, void **priv);
+extern int miiphy_link(const char *devname, unsigned char addr);
+static void phy_thread_entry(void *parameter)
+{
+    struct eth_device *dev = (struct eth_device *)parameter;
+    struct emac_device *emac = _EMAC_DEVICE(dev);
+    RT_ASSERT(emac != RT_NULL);
+
+    // wait for init to complete
+    int initlink = -1;
+    rt_thread_delay(RT_TICK_PER_SECOND);
+    while (1)
+    {
+        /* check link status */
+        int link = miiphy_link("emac", PHY_ADDR);
+        if (link != initlink){
+            rt_kprintf("emac link status:%d\n", link);
+            eth_device_linkchange(dev, link);
+            initlink = link;
+        }
+        /* dma buf error, restat emac */
+        int status = __REG(emac->base + EMAC_INT_STA);
+        if (status & 0x40){
+            __REG(emac->base + EMAC_INT_STA) = 0xffff;
+            rt_kprintf("emac dma err status:%x\n", status);
+            eth_device_linkchange(dev, 0);
+            _emac_init(&dev->parent);
+            rt_thread_delay(RT_TICK_PER_SECOND);
+        }
+        rt_thread_delay(RT_TICK_PER_SECOND);
+    }
+}
+
+extern int sun8i_emac_eth_probe(const char* name, unsigned char addr, void **priv);
 int rt_hw_eth_init(void)
 {
-    int ret = sun8i_emac_eth_probe("e0", &_emac.dev_ptr);
+    _emac.base = 0x01c30000;
+    int ret = sun8i_emac_eth_probe("emac", PHY_ADDR, &_emac.dev_ptr);
     if (ret != 0){
         rt_kprintf("failed to rt_hw_eth_init code:%d\n", ret);
         return ret;
@@ -159,6 +200,14 @@ int rt_hw_eth_init(void)
 
     /* register ETH device */
     eth_device_init(&(_emac.parent), "e0");
+    rt_hw_interrupt_install(114, _enet_isr, &(_emac.parent), "emac");
+    rt_hw_interrupt_umask(114);
+
+    /* check phy link status */
+    rt_thread_t tid = rt_thread_create("phy", phy_thread_entry,
+                           &(_emac.parent),
+                           512, RT_THREAD_PRIORITY_MAX - 4, 20);
+    rt_thread_startup(tid);
 
 	return 0;
 }

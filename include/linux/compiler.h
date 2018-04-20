@@ -212,7 +212,7 @@ void ftrace_likely_update(struct ftrace_branch_data *f, int val, int expect);
 	}								\
 })
 
-static __always_inline
+static __always_inline_u
 void __read_once_size(const volatile void *p, void *res, int size)
 {
 	__READ_ONCE_SIZE;
@@ -231,14 +231,14 @@ void __read_once_size_nocheck(const volatile void *p, void *res, int size)
 	__READ_ONCE_SIZE;
 }
 #else
-static __always_inline
+static __always_inline_u
 void __read_once_size_nocheck(const volatile void *p, void *res, int size)
 {
 	__READ_ONCE_SIZE;
 }
 #endif
 
-static __always_inline void __write_once_size(volatile void *p, void *res, int size)
+static __always_inline_u void __write_once_size(volatile void *p, void *res, int size)
 {
 	switch (size) {
 	case 1: *(volatile __u8 *)p = *(__u8 *)res; break;
@@ -392,8 +392,8 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
  */
 #define noinline_for_stack noinline
 
-#ifndef __always_inline
-#define __always_inline inline
+#ifndef __always_inline_u
+#define __always_inline_u inline
 #endif
 
 #endif /* __KERNEL__ */
@@ -547,7 +547,7 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 /* Ignore/forbid kprobes attach on very low level functions marked by this attribute: */
 #ifdef CONFIG_KPROBES
 # define __kprobes	__attribute__((__section__(".kprobes.text")))
-# define nokprobe_inline	__always_inline
+# define nokprobe_inline	__always_inline_u
 #else
 # define __kprobes
 # define nokprobe_inline	inline

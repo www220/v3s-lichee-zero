@@ -80,13 +80,13 @@
 #define __inline	__inline	notrace
 #endif
 
-#define __always_inline	inline __attribute__((always_inline))
-#define  noinline	__attribute__((noinline))
+#define __always_inline_u	inline __attribute__((__always_inline__))
+#define  noinline	__attribute__((__noinline__))
 
-#define __deprecated	__attribute__((deprecated))
-#define __packed	__attribute__((packed))
-#define __weak		__attribute__((weak))
-#define __alias(symbol)	__attribute__((alias(#symbol)))
+#define __deprecated	__attribute__((__deprecated__))
+#define __packed	__attribute__((__packed__))
+#define __weak		__attribute__((__weak__))
+#define __alias(symbol)	__attribute__((__alias__(#symbol)))
 
 /*
  * it doesn't make sense on ARM (currently the only user of __naked)
@@ -114,8 +114,8 @@
  * would be.
  * [...]
  */
-#define __pure			__attribute__((pure))
-#define __aligned(x)		__attribute__((aligned(x)))
+#define __pure			__attribute__((__pure__))
+#define __aligned(x)		__attribute__((__aligned__(x)))
 #define __printf(a, b)		__attribute__((format(printf, a, b)))
 #define __scanf(a, b)		__attribute__((format(scanf, a, b)))
 #define __attribute_const__	__attribute__((__const__))

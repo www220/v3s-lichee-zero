@@ -51,11 +51,28 @@ static int sunxi_gpio_input(u32 pin)
 	return dat & 0x1;
 }
 
+int gpio_request(unsigned gpio, const char *label)
+{
+	return 0;
+}
+
+int gpio_free(unsigned gpio)
+{
+	return 0;
+}
+
 int gpio_direction_input(unsigned gpio)
 {
 	sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_INPUT);
 
 	return 0;
+}
+
+int gpio_direction_output(unsigned gpio, int value)
+{
+	sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_OUTPUT);
+
+	return sunxi_gpio_output(gpio, value);
 }
 
 int gpio_direction_mode(unsigned gpio, int mode)
@@ -78,13 +95,6 @@ int gpio_direction_mode(unsigned gpio, int mode)
     }
 
 	return 0;
-}
-
-int gpio_direction_output(unsigned gpio, int value)
-{
-	sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_OUTPUT);
-
-	return sunxi_gpio_output(gpio, value);
 }
 
 int gpio_get_value(unsigned gpio)

@@ -39,7 +39,7 @@ extern int tick_timer_init(int tick);
 void rt_hw_tick_init(void)
 {
     tick_timer_init(RT_TICK_PER_SECOND);
-    rt_hw_interrupt_install(50, clock_irq, RT_NULL, "Tick");
+    rt_hw_interrupt_install(50, clock_irq, RT_NULL, "tick");
     rt_hw_interrupt_umask(50);
 }
 

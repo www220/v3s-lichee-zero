@@ -135,22 +135,6 @@ static inline void led_trigger_event(struct led_trigger *trigger,
 /* uapi/linux/limits.h */
 #define XATTR_LIST_MAX 65536	/* size of extended attribute namelist (64k) */
 
-/**
- * The type used for indexing onto a disc or disc partition.
- *
- * Linux always considers sectors to be 512 bytes long independently
- * of the devices real block size.
- *
- * blkcnt_t is the type of the inode's block count.
- */
-#ifdef CONFIG_LBDAF
-typedef u64 sector_t;
-typedef u64 blkcnt_t;
-#else
-typedef unsigned long sector_t;
-typedef unsigned long blkcnt_t;
-#endif
-
 /* module */
 #define THIS_MODULE		0
 #define try_module_get(...)	1

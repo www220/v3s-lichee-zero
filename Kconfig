@@ -85,6 +85,15 @@ config RT_USING_SFUD
 config RT_USING_LWIP
     bool
     default y
+config RT_MEMP_NUM_NETCONN
+    int
+    default 16
+config RT_LWIP_NETIF_LOOPBACK
+    bool
+    default y
+config LWIP_DHCP_CHECK_LINK_UP
+    int
+    default 1
 menu "Bsp definition options"
     choice 
         prompt "Dynamic Memory Management"

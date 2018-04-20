@@ -39,9 +39,9 @@ if PLATFORM == 'gcc':
     OBJCPY  = PREFIX + 'objcopy'
 
     DEVICE  = ' -march=armv7-a -mtune=cortex-a7 -mfpu=vfpv3-d16 -ftree-vectorize -ffast-math -mfloat-abi=softfp'
-    DEVICE += ' -ffunction-sections -fdata-sections -fno-builtin'
+    DEVICE += ' -ffunction-sections -fdata-sections -fno-builtin -fno-common -mno-unaligned-access -DCONFIG_USE_STDINT'
     DEVICE += ' -Iinclude -D__KERNEL__ -D__UBOOT__ -D__ARM__ -D__LINUX_ARM_ARCH__=7 -include include/linux/kconfig.h'
-    CFLAGS  = DEVICE + ' -Wall' 
+    CFLAGS  = DEVICE + ' -Wall -Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable' 
     AFLAGS  = ' -c' + DEVICE + ' -x assembler-with-cpp'
     AFLAGS += ' -D__ASSEMBLY__ -DCONFIG_ARM_ASM_UNIFIED'
     LFLAGS  = DEVICE + ' -Wl,--gc-sections,-Map=rtthread.map,-cref,-u,system_vectors -T link.lds'
@@ -52,7 +52,7 @@ if PLATFORM == 'gcc':
         CFLAGS += ' -O0 -gdwarf-2'
         AFLAGS += ' -gdwarf-2'
     else:
-        CFLAGS += ' -O2'
+        CFLAGS += ' -Os'
 
     CXXFLAGS = CFLAGS
 

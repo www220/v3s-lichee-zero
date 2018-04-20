@@ -8,15 +8,26 @@
 #ifndef __COMMON_H_
 #define __COMMON_H_	1
 
-#define snprintf(...) rt_snprintf(__VA_ARGS__)
-#define printf(...) rt_kprintf(__VA_ARGS__)
-
 #ifndef __ASSEMBLY__		/* put C only stuff in this section */
 
 typedef unsigned char		uchar;
 typedef volatile unsigned long	vu_long;
 typedef volatile unsigned short vu_short;
 typedef volatile unsigned char	vu_char;
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <stdint.h>
+#include <sys/types.h>
+
+void rt_kprintf(const char *fmt, ...);
+void rt_kputs(const char *str);
+#define snprintf rt_snprintf
+#define printf(fmt, args...) rt_kprintf(fmt, ##args)
+#define puts(str) rt_kputs(str)
+typedef off_t loff_t;
 
 #include <config.h>
 #include <errno.h>
@@ -128,7 +139,7 @@ typedef volatile unsigned char	vu_char;
 
 /* Show a message if DEBUG is defined in a file */
 #define debug(fmt, args...)			\
-	debug_cond(!_DEBUG, fmt, ##args)
+	debug_cond(_DEBUG, fmt, ##args)
 
 /* Show a message if not in SPL */
 #define warn_non_spl(fmt, args...)			\
@@ -362,52 +373,6 @@ int do_fat_fsload(cmd_tbl_t *, int, int, char * const []);
 
 /* common/cmd_ext2.c */
 int do_ext2load(cmd_tbl_t *, int, int, char * const []);
-
-/* common/cmd_nvedit.c */
-int	env_init     (void);
-void	env_relocate (void);
-int	envmatch     (uchar *, int);
-
-/* Avoid unfortunate conflict with libc's getenv() */
-#ifdef CONFIG_SANDBOX
-#define getenv uboot_getenv
-#endif
-char	*getenv	     (const char *);
-int	getenv_f     (const char *name, char *buf, unsigned len);
-ulong getenv_ulong(const char *name, int base, ulong default_val);
-
-/**
- * getenv_hex() - Return an environment variable as a hex value
- *
- * Decode an environment as a hex number (it may or may not have a 0x
- * prefix). If the environment variable cannot be found, or does not start
- * with hex digits, the default value is returned.
- *
- * @varname:		Variable to decode
- * @default_val:	Value to return on error
- */
-ulong getenv_hex(const char *varname, ulong default_val);
-
-/*
- * Read an environment variable as a boolean
- * Return -1 if variable does not exist (default to true)
- */
-int getenv_yesno(const char *var);
-int	saveenv	     (void);
-int	setenv	     (const char *, const char *);
-int setenv_ulong(const char *varname, ulong value);
-int setenv_hex(const char *varname, ulong value);
-/**
- * setenv_addr - Set an environment variable to an address in hex
- *
- * @varname:	Environment variable to set
- * @addr:	Value to set it to
- * @return 0 if ok, 1 on error
- */
-static inline int setenv_addr(const char *varname, const void *addr)
-{
-	return setenv_hex(varname, (ulong)addr);
-}
 
 #ifdef CONFIG_ARM
 # include <asm/mach-types.h>
@@ -851,12 +816,6 @@ char *	strmhz(char *buf, unsigned long hz);
 
 /* lib/crc32.c */
 #include <u-boot/crc.h>
-
-/* lib/rand.c */
-#define RAND_MAX -1U
-void srand(unsigned int seed);
-unsigned int rand(void);
-unsigned int rand_r(unsigned int *seedp);
 
 /* lib/gzip.c */
 int gzip(void *dst, unsigned long *lenp,
