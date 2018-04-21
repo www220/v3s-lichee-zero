@@ -88,6 +88,11 @@ ulong get_timer(ulong base)
 	return rt_tick_get() - base;
 }
 
+unsigned long timer_get_us(void)
+{
+	return rt_tick_get() * 1000;
+}
+
 void udelay(unsigned long usec)
 {
 	ulong kv;

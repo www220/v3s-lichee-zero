@@ -24,7 +24,6 @@ typedef volatile unsigned char	vu_char;
 
 void rt_kprintf(const char *fmt, ...);
 void rt_kputs(const char *str);
-#define snprintf rt_snprintf
 #define printf(fmt, args...) rt_kprintf(fmt, ##args)
 #define puts(str) rt_kputs(str)
 typedef off_t loff_t;

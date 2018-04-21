@@ -35,8 +35,6 @@ extern unsigned char __bss_end;
 
 void rt_hw_board_init(void);
 void rt_hw_mmu_init(void);
-int rt_hw_pin_init(void);
-int rt_hw_uart_init(void);
 
 void udelay(unsigned long usec);
 void mdelay(unsigned long msec);

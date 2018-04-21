@@ -7,6 +7,16 @@
 #include <netif/ethernetif.h>
 #include <lwipopts.h>
 
+//#define NET_TRACE
+//#define ETH_RX_DUMP
+//#define ETH_TX_DUMP
+
+#ifdef NET_TRACE
+#define NET_DEBUG         rt_kprintf
+#else
+#define NET_DEBUG(...)
+#endif /* #ifdef NET_TRACE */
+
 #define PHY_ADDR            1
 #define MAX_ADDR_LEN 		6
 #define EMAC_INT_STA		0x08
@@ -20,6 +30,7 @@ struct emac_device
 	/* inherit from Ethernet device */
 	struct eth_device parent;
     /* uboot dev_t */
+    uint32_t sysctl;
     uint32_t base;
     void * dev_ptr;
 	/* interface address info. */
@@ -92,7 +103,7 @@ static rt_err_t _emac_control(rt_device_t dev, int cmd, void *args)
 
 /* Ethernet device interface */
 /* transmit packet. */
-extern int _sun8i_emac_eth_send(void *priv, void *packet, int len);
+extern int _sun8i_emac_eth_send(void *priv, void *packet, int len, int offs);
 rt_err_t _emac_tx(rt_device_t dev, struct pbuf* p)
 {
     struct pbuf* q;
@@ -100,9 +111,37 @@ rt_err_t _emac_tx(rt_device_t dev, struct pbuf* p)
     struct emac_device *emac = _EMAC_DEVICE(dev);
     RT_ASSERT(emac != RT_NULL);
 
+#ifdef ETH_TX_DUMP
+    rt_size_t dump_count = 0;
+    rt_uint8_t * dump_ptr;
+    rt_size_t dump_i;
+    NET_DEBUG("tx_dump, size:%d\r\n", p->tot_len);
+#endif
+    int offset = 0;
     for (q = p; q != NULL; q = q->next){
-        _sun8i_emac_eth_send(emac->dev_ptr, q->payload, q->len);
+        _sun8i_emac_eth_send(emac->dev_ptr, q->payload, q->len, offset|(q->next?0x10000:0x0));
+        offset += q->len;
+#ifdef ETH_TX_DUMP
+        dump_ptr = q->payload;
+        for(dump_i=0; dump_i<q->len; dump_i++)
+        {
+            NET_DEBUG("%02x ", *dump_ptr);
+            if( ((dump_count+1)%8) == 0 )
+            {
+                NET_DEBUG("  ");
+            }
+            if( ((dump_count+1)%16) == 0 )
+            {
+                NET_DEBUG("\r\n");
+            }
+            dump_count++;
+            dump_ptr++;
+        }
+#endif
     }
+#ifdef ETH_TX_DUMP
+    NET_DEBUG("\r\n");
+#endif
 
     return result;
 }
@@ -126,12 +165,38 @@ struct pbuf *_emac_rx(rt_device_t dev)
         if (p == RT_NULL) {
             break;
         }
+#ifdef ETH_RX_DUMP
+        rt_size_t dump_count = 0;
+        rt_uint8_t * dump_ptr;
+        rt_size_t dump_i;
+        NET_DEBUG("rx_dump, size:%d\r\n", framelength);
+#endif
         int offset = 0;
         for (q = p; q != RT_NULL; q= q->next){
             rt_memcpy(q->payload,framepack+offset,q->len);
             offset += q->len;
+#ifdef ETH_RX_DUMP
+            dump_ptr = q->payload;
+            for(dump_i=0; dump_i<q->len; dump_i++)
+            {
+                NET_DEBUG("%02x ", *dump_ptr);
+                if( ((dump_count+1)%8) == 0 )
+                {
+                    NET_DEBUG("  ");
+                }
+                if( ((dump_count+1)%16) == 0 )
+                {
+                    NET_DEBUG("\r\n");
+                }
+                dump_count++;
+                dump_ptr++;
+            }
+#endif
         }
         _sun8i_free_pkt(emac->dev_ptr);
+#ifdef ETH_RX_DUMP
+        NET_DEBUG("\r\n");
+#endif
     }while (0);
 
     return p;
@@ -169,11 +234,12 @@ static void phy_thread_entry(void *parameter)
     }
 }
 
-extern int sun8i_emac_eth_probe(const char* name, unsigned char addr, void **priv);
+extern int sun8i_emac_eth_probe(const char* name, uint32_t sysctl, uint32_t reg, uint8_t addr, void **priv);
 int rt_hw_eth_init(void)
 {
+    _emac.sysctl = 0x01c00030;
     _emac.base = 0x01c30000;
-    int ret = sun8i_emac_eth_probe("emac", PHY_ADDR, &_emac.dev_ptr);
+    int ret = sun8i_emac_eth_probe("emac", _emac.sysctl, _emac.base, PHY_ADDR, &_emac.dev_ptr);
     if (ret != 0){
         rt_kprintf("failed to rt_hw_eth_init code:%d\n", ret);
         return ret;
@@ -211,5 +277,4 @@ int rt_hw_eth_init(void)
 
 	return 0;
 }
-INIT_DEVICE_EXPORT(rt_hw_eth_init)
-
+INIT_DEVICE_EXPORT(rt_hw_eth_init);

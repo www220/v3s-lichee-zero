@@ -3,7 +3,38 @@
 from building import *
 
 cwd     = GetCurrentDir()
-src     = Glob('*.c')
+
+src = Split("""
+board.c
+romfs.c
+""")
+gpiodev = Split("""
+drv_gpio.c
+""")
+uartdev = Split("""
+drv_uart.c
+""")
+emacdev = Split("""
+drv_emac.c
+""")
+spidev = Split("""
+drv_spi.c
+""")
+rtcdev = Split("""
+drv_rtc.c
+""")
+
+if GetDepend(['RT_USING_SERIAL']):
+    src += uartdev
+if GetDepend(['RT_USING_PIN']):
+    src += gpiodev
+if GetDepend(['RT_USING_SPI']):
+    src += spidev
+if GetDepend(['RT_USING_LWIP']):
+    src += emacdev
+if GetDepend(['RT_USING_RTC']):
+    src += rtcdev
+
 CPPPATH = [cwd]
 
 group = DefineGroup('Drivers', src, depend = [''], CPPPATH = CPPPATH)

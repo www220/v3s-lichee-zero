@@ -61,20 +61,24 @@ void rt_hw_board_init(void)
 
     // init tick
     rt_hw_tick_init();
-    // init pin
-    rt_hw_pin_init();
-    // init uart
-    rt_hw_uart_init();
+
+#ifdef RT_USING_COMPONENTS_INIT
+    rt_components_board_init();
+#endif
 
 #ifdef RT_USING_CONSOLE
     /* set console device */
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif /* RT_USING_CONSOLE */
-
-#ifdef RT_USING_COMPONENTS_INIT
-    rt_components_board_init();
-#endif
 }
 
+#ifdef RT_USING_DFS_MNTTABLE
+#include <dfs_fs.h>
+extern const struct romfs_dirent romfs_root;
+const struct dfs_mount_tbl mount_table[] = {
+    {RT_NULL, "/", "rom", 0, &romfs_root},
+    {RT_NULL}
+};
+#endif
 int ctrlc(void) { return 0; }
 

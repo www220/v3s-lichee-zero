@@ -38,3 +38,4 @@ int rt_hw_pin_init(void)
 	rt_device_pin_register("pin", &_pin_ops, RT_NULL);
 	return 0;
 }
+INIT_BOARD_EXPORT(rt_hw_pin_init);

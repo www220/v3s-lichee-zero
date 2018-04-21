@@ -22,10 +22,10 @@ config $PKGS_DIR
 config RT_NAME_MAX
     int
     default 16
-config RT_DEBUG_INIT
-    int
-    default 1
 config RT_USING_DFS
+    bool
+    default y
+config RT_USING_DFS_MNTTABLE
     bool
     default y
 config RT_USING_POSIX
@@ -84,6 +84,9 @@ config RT_USING_SFUD
     default y
 config RT_USING_LWIP
     bool
+    default n
+config RT_LWIP_RAW
+    bool
     default y
 config RT_MEMP_NUM_NETCONN
     int
@@ -117,6 +120,17 @@ menu "Bsp definition options"
         config RT_USING_LWIP202
             bool "lwIP v2.0.2"
     endchoice
+    menu "Static IPv4 Address"
+        config RT_LWIP_IPADDR
+            string "IPv4: IP address"
+            default 192.168.100.30
+        config RT_LWIP_GWADDR
+            string "IPv4: Gateway address"
+            default 192.168.100.1
+        config RT_LWIP_MSKADDR
+            string "IPv4: Mask address"
+            default 255.255.255.0
+    endmenu
 endmenu
 
 

@@ -10,24 +10,24 @@
 #define _SUNXI_SPI_SUN6I_H
 
 struct sunxi_spi_regs {
-	uint32_t unused0[1];
-	uint32_t glb_ctl;	/* 0x04 */
-	uint32_t xfer_ctl;	/* 0x08 */
-	uint32_t unused1[1];
-	uint32_t int_ctl;	/* 0x10 */
-	uint32_t int_sta;	/* 0x14 */
-	uint32_t fifo_ctl;	/* 0x18 */
-	uint32_t fifo_sta;	/* 0x1c */
-	uint32_t wait;		/* 0x20 */
-	uint32_t clk_ctl;	/* 0x24 */
-	uint32_t unused2[2];
-	uint32_t burst_cnt;	/* 0x30 */
-	uint32_t xmit_cnt;	/* 0x34 */
-	uint32_t burst_ctl;	/* 0x38 */
-	uint32_t unused3[113];
-	uint32_t tx_data;	/* 0x200 */
-	uint32_t unused4[63];
-	uint32_t rx_data;	/* 0x300 */
+	u32 unused0[1];
+	u32 glb_ctl;	/* 0x04 */
+	u32 xfer_ctl;	/* 0x08 */
+	u32 unused1[1];
+	u32 int_ctl;	/* 0x10 */
+	u32 int_sta;	/* 0x14 */
+	u32 fifo_ctl;	/* 0x18 */
+	u32 fifo_sta;	/* 0x1c */
+	u32 wait;		/* 0x20 */
+	u32 clk_ctl;	/* 0x24 */
+	u32 unused2[2];
+	u32 burst_cnt;	/* 0x30 */
+	u32 xmit_cnt;	/* 0x34 */
+	u32 burst_ctl;	/* 0x38 */
+	u32 unused3[113];
+	u32 tx_data;	/* 0x200 */
+	u32 unused4[63];
+	u32 rx_data;	/* 0x300 */
 };
 
 #define SUNXI_SPI_CTL_ENABLE		BIT(0)

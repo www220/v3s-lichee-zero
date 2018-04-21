@@ -481,26 +481,32 @@ int _sun8i_eth_recv(struct emac_eth_dev *priv, uchar **packetp)
 	return length;
 }
 
-int _sun8i_emac_eth_send(struct emac_eth_dev *priv, void *packet, int len)
+int _sun8i_emac_eth_send(struct emac_eth_dev *priv, void *packet, int len, int offs)
 {
 	u32 v, desc_num = priv->tx_currdescnum;
 	struct emac_dma_desc *desc_p = &priv->tx_chain[desc_num];
+	/* Copy data to be sent */
+	if (offs >= 0x10000){
+		offs &= 0xffff;
+		memcpy((void *)desc_p->buf_addr+offs, packet, len);
+		return 0;
+	}
 	uintptr_t desc_start = (uintptr_t)desc_p;
 	uintptr_t desc_end = desc_start +
 		roundup(sizeof(*desc_p), ARCH_DMA_MINALIGN);
 
 	uintptr_t data_start = (uintptr_t)desc_p->buf_addr;
 	uintptr_t data_end = data_start +
-		roundup(len, ARCH_DMA_MINALIGN);
+		roundup(offs+len, ARCH_DMA_MINALIGN);
 
 	/* Invalidate entire buffer descriptor */
 	invalidate_dcache_range(desc_start, desc_end);
 
-	desc_p->st = len;
+	desc_p->st = offs+len;
 	/* Mandatory undocumented bit */
 	desc_p->st |= BIT(24);
 
-	memcpy((void *)data_start, packet, len);
+	memcpy((void *)data_start+offs, packet, len);
 
 	/* Flush data to be sent */
 	flush_dcache_range(data_start, data_end);
@@ -601,11 +607,11 @@ void sun8i_emac_eth_stop(struct emac_eth_dev *priv)
 }
 
 static struct emac_eth_dev indev;
-int sun8i_emac_eth_probe(const char* name, unsigned char addr, void **dev)
+int sun8i_emac_eth_probe(const char* name, ulong sysctl, ulong reg, uchar addr, void **dev)
 {
 	struct emac_eth_dev *priv = &indev;
-    priv->sysctl_reg = 0x01c00030;
-	priv->mac_reg = (void *)0x01c30000;
+    priv->sysctl_reg = sysctl;
+	priv->mac_reg = (void *)reg;
     priv->variant = H3_EMAC;
     priv->use_internal_phy = true;
     priv->phyaddr = addr;
