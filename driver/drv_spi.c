@@ -36,6 +36,8 @@ struct hw_spi_bus
     uint32_t base;
     char *name;
     void * dev_ptr;
+    uint32_t pin[4];
+    uint32_t mode[4];
 };
 struct hw_spi_dev
 {
@@ -43,6 +45,8 @@ struct hw_spi_dev
     int cs;
 };
 
+extern int sunxi_spi_set_speed(void  *priv, uint speed);
+extern int sunxi_spi_set_mode(void *priv, uint mode);
 extern int sunxi_spi_claim_bus(void *priv);
 static rt_err_t spi_configure(struct rt_spi_device *device, struct rt_spi_configuration *configuration)
 {
@@ -51,10 +55,15 @@ static rt_err_t spi_configure(struct rt_spi_device *device, struct rt_spi_config
     RT_ASSERT(spi_bus != RT_NULL);
     RT_ASSERT(spi_dev != RT_NULL);
 
+    int speed = configuration->max_hz;
+    int mode = configuration->mode & (RT_SPI_CPHA | RT_SPI_CPOL);
+    sunxi_spi_set_speed(spi_bus->dev_ptr, speed);
+    sunxi_spi_set_mode(spi_bus->dev_ptr, mode);
     sunxi_spi_claim_bus(spi_bus->dev_ptr);
     return RT_EOK;
 }
 
+int sunxi_spi_xfer(void *priv, unsigned int bitlen, uint cs, const void *dout, void *din, unsigned long flags);
 static rt_uint32_t spi_xfer(struct rt_spi_device *device, struct rt_spi_message *message)
 {
     struct hw_spi_bus *spi_bus = (struct hw_spi_bus *)device->bus->parent.user_data;
@@ -62,7 +71,11 @@ static rt_uint32_t spi_xfer(struct rt_spi_device *device, struct rt_spi_message 
     RT_ASSERT(spi_bus != RT_NULL);
     RT_ASSERT(spi_dev != RT_NULL);
 
-    return 0;
+    uint32_t flag = 0;
+    if (message->cs_take) flag |= 0x01;
+    if (message->cs_release) flag |= 0x02;
+    sunxi_spi_xfer(spi_bus->dev_ptr, message->length*8, spi_dev->cs, message->send_buf, message->recv_buf, flag);
+    return message->length;
 }
 
 const struct rt_spi_ops _spi_ops =
@@ -74,18 +87,24 @@ const struct rt_spi_ops _spi_ops =
 static struct hw_spi_bus _spibus0_user =
 {
     0x01c68000,
-    "spibus",
+    "spi",
+    0,
+    {SUNXI_GPC(0), SUNXI_GPC(1), SUNXI_GPC(2), SUNXI_GPC(3)},
+    {3, 3, 3, 3}
 };
 static struct hw_spi_dev _spidev00_user =
 {
-    "spidev",
-    23
+    "flash",
+    0
 };
 static struct rt_spi_bus _spibus0;
 static struct rt_spi_device _spidev00;
 
+extern void sunxi_gpio_set_cfgpin(uint32_t pin, uint32_t val);
 void spibus_pin_config(struct rt_spi_bus *bus, struct hw_spi_bus *spi)
 {
+    int i;
+    for (i=0; i<4; i++) sunxi_gpio_set_cfgpin(spi->pin[i], spi->mode[i]);
     bus->parent.user_data = spi;
     rt_spi_bus_register(bus, spi->name, &_spi_ops);
 }
@@ -108,7 +127,7 @@ INIT_BOARD_EXPORT(rt_hw_spi_init);
 
 int rt_hw_spi_flash_with_sfud_init(void)
 {
-    rt_spi_flash_device_t spi_device = rt_sfud_flash_probe("flash", _spidev00_user.name);
+    rt_spi_flash_device_t spi_device = rt_sfud_flash_probe("sfud", _spidev00_user.name);
     if (spi_device == NULL)
     {
         rt_kprintf("failed to rt_hw_spi_flash_with_sfud_init\n");

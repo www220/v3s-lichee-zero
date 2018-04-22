@@ -29,17 +29,6 @@ struct sunxi_spi_priv {
 	unsigned int last_transaction_us;
 };
 
-static int sunxi_spi_parse_pins(struct sunxi_spi_priv *priv)
-{
-	unsigned int pin_func = SUNXI_GPC_SPI0;
-	int ret;
-
-	if (IS_ENABLED(CONFIG_MACH_SUN50I))
-		pin_func = SUN50I_GPC_SPI0;
-
-	return ret;
-}
-
 static void sunxi_spi_enable_clock(struct sunxi_spi_priv *priv)
 {
 	struct sunxi_ccm_reg * const ccm =
@@ -120,7 +109,6 @@ int sunxi_spi_claim_bus(struct sunxi_spi_priv *priv)
 
 	debug("%s: claiming bus\n", __func__);
 
-	sunxi_spi_parse_pins(priv);
 	sunxi_spi_enable_clock(priv);
 	setbits_le32(&priv->regs->glb_ctl, SUNXI_SPI_CTL_MASTER |
 		SUNXI_SPI_CTL_ENABLE | SUNXI_SPI_CTL_TP | SUNXI_SPI_CTL_SRST);
@@ -168,7 +156,7 @@ static void sunxi_spi_write(struct sunxi_spi_priv *priv, const char *tx_buf,
 	}
 }
 
-static int sunxi_spi_xfer(struct sunxi_spi_priv *priv, unsigned int bitlen, uint cs,
+int sunxi_spi_xfer(struct sunxi_spi_priv *priv, unsigned int bitlen, uint cs,
 	const void *dout, void *din, unsigned long flags)
 {
 	const char *tx_buf = dout;
@@ -216,7 +204,7 @@ static int sunxi_spi_xfer(struct sunxi_spi_priv *priv, unsigned int bitlen, uint
 	return 0;
 }
 
-static int sunxi_spi_set_speed(struct sunxi_spi_priv *priv, uint speed)
+int sunxi_spi_set_speed(struct sunxi_spi_priv *priv, uint speed)
 {
 	unsigned int div;
 	uint32_t reg;
@@ -243,7 +231,7 @@ static int sunxi_spi_set_speed(struct sunxi_spi_priv *priv, uint speed)
 	return 0;
 }
 
-static int sunxi_spi_set_mode(struct sunxi_spi_priv *priv, uint mode)
+int sunxi_spi_set_mode(struct sunxi_spi_priv *priv, uint mode)
 {
 	uint32_t reg;
 
