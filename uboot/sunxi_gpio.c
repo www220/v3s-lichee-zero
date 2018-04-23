@@ -75,24 +75,14 @@ int gpio_direction_output(unsigned gpio, int value)
 	return sunxi_gpio_output(gpio, value);
 }
 
-int gpio_direction_mode(unsigned gpio, int mode)
+int gpio_set_mode(unsigned gpio, uint32_t mode)
 {
-    if (mode == 0){
-	    sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_INPUT);
-    	sunxi_gpio_set_pull(gpio, SUN4I_PINCTRL_PULL_UP);
-    	sunxi_gpio_set_drv(gpio, SUN4I_PINCTRL_10_MA);
-    }else if (mode == 1){
-        sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_OUTPUT);
-        sunxi_gpio_set_pull(gpio, SUN4I_PINCTRL_PULL_UP);
-    	sunxi_gpio_set_drv(gpio, SUN4I_PINCTRL_10_MA);
-    }else if (mode == 2){
-        sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_OUTPUT);
-        sunxi_gpio_set_pull(gpio, SUN4I_PINCTRL_NO_PULL);
-    	sunxi_gpio_set_drv(gpio, SUN4I_PINCTRL_10_MA);
-    }else{
-        sunxi_gpio_set_cfgpin(gpio, SUNXI_GPIO_DISABLE);
-        sunxi_gpio_set_pull(gpio, SUN4I_PINCTRL_NO_PULL);
-    }
+    uint8_t enable,inout,pull,drv;
+    enable=mode&0xf;inout=(mode>>4)&0xf;pull=(mode>>8)&0xf;drv=(mode>>12)&0xf;
+    if (enable==0) return 1;
+    if (enable&0x1) sunxi_gpio_set_cfgpin(gpio, inout);
+    if (enable&0x2) sunxi_gpio_set_pull(gpio, pull);
+    if (enable&0x4) sunxi_gpio_set_drv(gpio, drv);
 
 	return 0;
 }
@@ -107,3 +97,25 @@ int gpio_set_value(unsigned gpio, int value)
 	return sunxi_gpio_output(gpio, value);
 }
 
+int sunxi_name_to_gpio(const char *name)
+{
+	int group = 0;
+	int groupsize = 9 * 32;
+	long pin;
+	char *eptr;
+
+	if (*name == 'P' || *name == 'p')
+		name++;
+	if (*name >= 'A') {
+		group = *name - (*name > 'a' ? 'a' : 'A');
+		groupsize = 32;
+		name++;
+	}
+
+	pin = strtol(name, &eptr, 10);
+	if (!*name || *eptr)
+		return -1;
+	if (pin < 0 || pin > groupsize || group >= 9)
+		return -1;
+	return group * 32 + pin;
+}

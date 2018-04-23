@@ -87,9 +87,56 @@ enum sunxi_gpio_number {
 #define SUNXI_GPN(_nr)	(SUNXI_GPIO_N_START + (_nr))
 #define SUNXI_GPAXP0(_nr)	(SUNXI_GPIO_AXP0_START + (_nr))
 
+/* GPIO pin function config */
+#define SUNXI_GPIO_INPUT	0
+#define SUNXI_GPIO_OUTPUT	1
+#define SUNXI_GPIO_DISABLE	7
+
+#define SUNXI_GPB_UART2		2
+#define SUNXI_GPB_PWM0		2
+#define SUNXI_GPB_PWM1		2
+#define SUNXI_GPB_TWI0		2
+#define SUNXI_GPB_TWI1		2
+#define SUNXI_GPB_UART0		3
+
+#define SUNXI_GPC_SDC2		2
+#define SUNXI_GPC_SPI0		3
+
+#define SUN8I_GPE_CSI		2
+#define SUNXI_GPE_LCD		3
+#define SUN8I_GPE_MIPI		3
+#define SUNXI_GPE_TWI1		3
+#define SUNXI_GPE_UART1		4
+
+#define SUNXI_GPF_SDC0		2
+#define SUNXI_GPF_UART0		3
+
+#define SUNXI_GPG_SDC1		2
+#define PIN_TYPE(x) ((0x1)|(4<<x))
+
+#define SUN4I_PINCTRL_10_MA	0
+#define SUN4I_PINCTRL_20_MA	1
+#define SUN4I_PINCTRL_30_MA	2
+#define SUN4I_PINCTRL_40_MA	3
+#define MA_10   ((0x4)|(12<<SUN4I_PINCTRL_10_MA))
+#define MA_20   ((0x4)|(12<<SUN4I_PINCTRL_20_MA))
+#define MA_30   ((0x4)|(12<<SUN4I_PINCTRL_30_MA))
+#define MA_40   ((0x4)|(12<<SUN4I_PINCTRL_40_MA))
+
+#define SUN4I_PINCTRL_NO_PULL	0
+#define SUN4I_PINCTRL_PULL_UP	1
+#define SUN4I_PINCTRL_PULL_DOWN	2
+#define PULL_NO     ((0x2)|(8<<SUN4I_PINCTRL_NO_PULL))
+#define PULL_UP     ((0x2)|(8<<SUN4I_PINCTRL_PULL_UP))
+#define PULL_DOWN   ((0x2)|(8<<SUN4I_PINCTRL_PULL_DOWN))
+
+void sunxi_gpio_set_cfgpin(uint32_t pin, uint32_t val);
+int sunxi_gpio_set_drv(uint32_t pin, uint32_t val);
+int sunxi_gpio_set_pull(uint32_t pin, uint32_t val);
+
+int gpio_set_mode(unsigned gpio, uint32_t mode);
 int gpio_direction_input(unsigned gpio);
 int gpio_direction_output(unsigned gpio, int value);
-int gpio_direction_mode(unsigned gpio, int mode);
 int gpio_get_value(unsigned gpio);
 int gpio_set_value(unsigned gpio, int value);
 
@@ -101,5 +148,10 @@ void NS16550_puts(void *com_port, const char *s);
 void NS16550_putc(void *com_port, char c);
 char NS16550_getc(void *com_port);
 int NS16550_tstc(void *com_port);
+
+int sun4i_pwm_config(int hwpwm, int duty_ns, int period_ns);
+int sun4i_pwm_set_polarity(int hwpwm, int polarity);
+int sun4i_pwm_enable(int hwpwm);
+void sun4i_pwm_disable(int hwpwm);
 
 #endif

@@ -70,6 +70,12 @@ void rt_hw_board_init(void)
     /* set console device */
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif /* RT_USING_CONSOLE */
+
+    extern int print_cpuinfo(void);
+    extern unsigned int clock_get_pll1(void);
+    rt_kprintf("\n");
+    print_cpuinfo();
+    rt_kprintf("         %d MHz\n");
 }
 
 #ifdef RT_USING_DFS_MNTTABLE

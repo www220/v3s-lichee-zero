@@ -36,12 +36,14 @@ struct hw_spi_bus
     uint32_t base;
     char *name;
     void * dev_ptr;
-    uint32_t pin[4];
-    uint32_t mode[4];
+    uint32_t pin[3];
+    int32_t mode[3];
 };
 struct hw_spi_dev
 {
     char *name;
+    uint32_t pin;
+    int32_t mode;
     int cs;
 };
 
@@ -89,28 +91,30 @@ static struct hw_spi_bus _spibus0_user =
     0x01c68000,
     "spi",
     0,
-    {SUNXI_GPC(0), SUNXI_GPC(1), SUNXI_GPC(2), SUNXI_GPC(3)},
-    {3, 3, 3, 3}
+    {SUNXI_GPC(0), SUNXI_GPC(1), SUNXI_GPC(3)},
+    {PIN_TYPE(SUNXI_GPC_SPI0)|PULL_UP, PIN_TYPE(SUNXI_GPC_SPI0)|PULL_UP, PIN_TYPE(SUNXI_GPC_SPI0)|PULL_UP}
 };
 static struct hw_spi_dev _spidev00_user =
 {
     "flash",
-    0
+    0,
+    SUNXI_GPC(2),
+    PIN_TYPE(SUNXI_GPC_SPI0)|PULL_UP
 };
 static struct rt_spi_bus _spibus0;
 static struct rt_spi_device _spidev00;
 
-extern void sunxi_gpio_set_cfgpin(uint32_t pin, uint32_t val);
 void spibus_pin_config(struct rt_spi_bus *bus, struct hw_spi_bus *spi)
 {
     int i;
-    for (i=0; i<4; i++) sunxi_gpio_set_cfgpin(spi->pin[i], spi->mode[i]);
+    for (i=0; i<sizeof(spi->pin)/spi->pin[0]; i++) gpio_set_mode(spi->pin[i], spi->mode[i]);
     bus->parent.user_data = spi;
     rt_spi_bus_register(bus, spi->name, &_spi_ops);
 }
 
 void spidev_pin_config(const char *bus, struct rt_spi_device *dev, struct hw_spi_dev *spi)
 {
+    gpio_set_mode(spi->pin, spi->mode);
     rt_spi_bus_attach_device(dev, spi->name, bus, spi);
 }
 

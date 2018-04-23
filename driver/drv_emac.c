@@ -210,7 +210,7 @@ static void phy_thread_entry(void *parameter)
     RT_ASSERT(emac != RT_NULL);
 
     // wait for init to complete
-    int initlink = -1;
+    int initlink = 0;
     rt_thread_delay(RT_TICK_PER_SECOND);
     while (1)
     {

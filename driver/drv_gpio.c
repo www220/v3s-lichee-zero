@@ -18,11 +18,11 @@ int pin_read(rt_device_t dev, rt_base_t pin)
 void pin_mode(rt_device_t dev, rt_base_t pin, rt_base_t mode)
 {
     if (mode == PIN_MODE_OUTPUT){
-        gpio_direction_mode(pin, 1);
+        gpio_set_mode(pin, PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_UP);
     }else if(mode == PIN_MODE_OUTPUT_OD){
-        gpio_direction_mode(pin, 2);
+        gpio_set_mode(pin, PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_NO);
     }else{
-        gpio_direction_mode(pin, 0);
+        gpio_set_mode(pin, PIN_TYPE(SUNXI_GPIO_INPUT)|PULL_UP);
     }
 }
 
