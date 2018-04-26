@@ -146,7 +146,7 @@ static void sd_thread_entry(void *parameter)
     uint32_t card,status;
     struct mmc_mci *mmc = (struct mmc_mci*)parameter;
     
-    card = -1;
+    card = mmcsd_is_cd(mmc);
     rt_thread_delay(RT_TICK_PER_SECOND);
     while(1)
     {
@@ -180,7 +180,7 @@ static void sd_thread_entry(void *parameter)
 }
 
 extern void *sunxi_mmc_probe(int sdc_no);
-int rt_hw_rf_init(void)
+int rt_hw_tf_init(void)
 {
 	mci.host = mmcsd_alloc_host();
 	if (!mci.host){
@@ -208,8 +208,13 @@ int rt_hw_rf_init(void)
 	mci.host->max_blk_count = 4096;
 	mci.host->private_data = &mci;
 
-	mci.run = 1;
-	mmcsd_change(mci.host);
+    mci.run = 1;
+    mmcsd_change(mci.host);
+    mmcsd_wait_cd_changed(5000);
+    if (dfs_mount("sd0", "/mmc", "elm", 0, 0) == 0)
+        SD_LINK_PRINTF("Mount /mmc ok!\n");
+    else
+        SD_LINK_PRINTF("Mount /mmc failed!\n");
 
     /* start sd monitor */
     rt_thread_t tid = rt_thread_create("sd_mon", sd_thread_entry,
@@ -219,4 +224,4 @@ int rt_hw_rf_init(void)
     
     return 0;
 }
-INIT_APP_EXPORT(rt_hw_rf_init);
+INIT_ENV_EXPORT(rt_hw_tf_init);

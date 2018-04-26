@@ -106,6 +106,8 @@ int rt_hw_rtc_init(void)
 	rt_mutex_init(&rtc_mutex, "rtc", RT_IPC_FLAG_FIFO);
     rt_device_register(&rtc, "rtc", RT_DEVICE_FLAG_RDWR);
 
+    putenv("TZ=CST-8:00");
+    tzset();
     return 0;
 }
 INIT_DEVICE_EXPORT(rt_hw_rtc_init);

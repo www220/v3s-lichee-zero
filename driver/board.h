@@ -31,7 +31,7 @@ extern unsigned char __bss_start;
 extern unsigned char __bss_end;
 
 #define RT_HW_HEAP_BEGIN    (void*)&__bss_end
-#define RT_HW_HEAP_END      (void*)0x43C00000
+#define RT_HW_HEAP_END      (void*)0x43800000
 
 void rt_hw_board_init(void);
 void rt_hw_mmu_init(void);

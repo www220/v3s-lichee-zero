@@ -127,9 +127,9 @@ int rt_hw_spi_init(void)
 
     return 0;
 }
-INIT_BOARD_EXPORT(rt_hw_spi_init);
+INIT_PREV_EXPORT(rt_hw_spi_init);
 
-int rt_hw_spi_flash_with_sfud_init(void)
+int rt_hw_spi_sfud(void)
 {
     rt_spi_flash_device_t spi_device = rt_sfud_flash_probe("sfud", _spidev00_user.name);
     if (spi_device == NULL)
@@ -140,5 +140,5 @@ int rt_hw_spi_flash_with_sfud_init(void)
 
     return 0;
 }
-INIT_PREV_EXPORT(rt_hw_spi_flash_with_sfud_init);
+INIT_PREV_EXPORT(rt_hw_spi_sfud);
 

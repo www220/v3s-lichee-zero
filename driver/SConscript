@@ -7,6 +7,7 @@ cwd     = GetCurrentDir()
 src = Split("""
 board.c
 romfs.c
+drv_lcd.c
 """)
 gpiodev = Split("""
 drv_gpio.c

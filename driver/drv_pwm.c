@@ -38,4 +38,4 @@ int rt_hw_pwm_init(void)
 
     return 0;
 }
-INIT_BOARD_EXPORT(rt_hw_pwm_init);
+INIT_DEVICE_EXPORT(rt_hw_pwm_init);

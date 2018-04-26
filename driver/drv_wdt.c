@@ -91,4 +91,4 @@ int rt_hw_wdt_init(void)
 
     return 0;
 }
-INIT_APP_EXPORT(rt_hw_wdt_init);
+INIT_DEVICE_EXPORT(rt_hw_wdt_init);

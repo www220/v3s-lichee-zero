@@ -73,9 +73,10 @@ void rt_hw_board_init(void)
 
     extern int print_cpuinfo(void);
     extern unsigned int clock_get_pll1(void);
-    rt_kprintf("\n");
+    rt_kprintf("\n\n");
     print_cpuinfo();
-    rt_kprintf("         %d MHz\n");
+    rt_kprintf("       %d MHz\n");
+    rt_kprintf("DRAM:  64 MiB\n\n");
 }
 
 #ifdef RT_USING_DFS_MNTTABLE

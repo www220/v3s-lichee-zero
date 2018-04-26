@@ -91,4 +91,4 @@ int rt_hw_i2c_init(void)
 
     return 0;
 }
-INIT_APP_EXPORT(rt_hw_i2c_init);
+INIT_ENV_EXPORT(rt_hw_i2c_init);
