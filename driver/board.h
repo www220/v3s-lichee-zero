@@ -112,23 +112,23 @@ enum sunxi_gpio_number {
 #define SUNXI_GPF_UART0		3
 
 #define SUNXI_GPG_SDC1		2
-#define PIN_TYPE(x) ((0x1)|(4<<x))
+#define PIN_TYPE(x) ((0x1)|((x)<<4))
 
 #define SUN4I_PINCTRL_10_MA	0
 #define SUN4I_PINCTRL_20_MA	1
 #define SUN4I_PINCTRL_30_MA	2
 #define SUN4I_PINCTRL_40_MA	3
-#define MA_10   ((0x4)|(12<<SUN4I_PINCTRL_10_MA))
-#define MA_20   ((0x4)|(12<<SUN4I_PINCTRL_20_MA))
-#define MA_30   ((0x4)|(12<<SUN4I_PINCTRL_30_MA))
-#define MA_40   ((0x4)|(12<<SUN4I_PINCTRL_40_MA))
+#define MA_10   ((0x4)|(SUN4I_PINCTRL_10_MA<<12))
+#define MA_20   ((0x4)|(SUN4I_PINCTRL_20_MA<<12))
+#define MA_30   ((0x4)|(SUN4I_PINCTRL_30_MA<<12))
+#define MA_40   ((0x4)|(SUN4I_PINCTRL_40_MA<<12))
 
 #define SUN4I_PINCTRL_NO_PULL	0
 #define SUN4I_PINCTRL_PULL_UP	1
 #define SUN4I_PINCTRL_PULL_DOWN	2
-#define PULL_NO     ((0x2)|(8<<SUN4I_PINCTRL_NO_PULL))
-#define PULL_UP     ((0x2)|(8<<SUN4I_PINCTRL_PULL_UP))
-#define PULL_DOWN   ((0x2)|(8<<SUN4I_PINCTRL_PULL_DOWN))
+#define PULL_NO     ((0x2)|(SUN4I_PINCTRL_NO_PULL<<8))
+#define PULL_UP     ((0x2)|(SUN4I_PINCTRL_PULL_UP<<8))
+#define PULL_DOWN   ((0x2)|(SUN4I_PINCTRL_PULL_DOWN<<8))
 
 void sunxi_gpio_set_cfgpin(uint32_t pin, uint32_t val);
 int sunxi_gpio_set_drv(uint32_t pin, uint32_t val);

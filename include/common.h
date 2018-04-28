@@ -138,7 +138,7 @@ typedef off_t loff_t;
 
 /* Show a message if DEBUG is defined in a file */
 #define debug(fmt, args...)			\
-	debug_cond(_DEBUG, fmt, ##args)
+	debug_cond(!_DEBUG, fmt, ##args)
 
 /* Show a message if not in SPL */
 #define warn_non_spl(fmt, args...)			\

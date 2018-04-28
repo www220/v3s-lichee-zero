@@ -73,16 +73,16 @@ struct rt_i2c_bus_device bit_i2c0;
 struct rt_i2c_bus_device bit_i2c1;
 int rt_hw_i2c_init(void)
 {
-    gpio_set_mode(i2c0_pin[0], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_NO);
-    gpio_set_mode(i2c0_pin[1], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_NO);
+    gpio_set_mode(i2c0_pin[0], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_UP);
+    gpio_set_mode(i2c0_pin[1], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_UP);
     gpio_set_value(i2c0_pin[0], 1);
     gpio_set_value(i2c0_pin[1], 1);
     _i2c_bit_ops.data = i2c0_pin;
 	bit_i2c0.priv = &_i2c_bit_ops;
 	rt_i2c_bit_add_bus(&bit_i2c0, "i2c0");
 
-    gpio_set_mode(i2c1_pin[0], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_NO);
-    gpio_set_mode(i2c1_pin[1], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_NO);
+    gpio_set_mode(i2c1_pin[0], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_UP);
+    gpio_set_mode(i2c1_pin[1], PIN_TYPE(SUNXI_GPIO_OUTPUT)|PULL_UP);
     gpio_set_value(i2c1_pin[0], 1);
     gpio_set_value(i2c1_pin[1], 1);
    _i2c_bit_ops.data = i2c1_pin;

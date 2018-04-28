@@ -25,9 +25,6 @@ config RT_NAME_MAX
 config RT_USING_DFS
     bool
     default y
-config RT_USING_DFS_MNTTABLE
-    bool
-    default y
 config RT_USING_POSIX
     bool
     default n
@@ -75,10 +72,10 @@ config RT_USING_I2C
     default y
 config RT_USING_SDIO
     bool
-    default y
+    default n
 config RT_USING_SPI
     bool
-    default y
+    default n
 config RT_USING_SFUD
     bool
     default y
@@ -104,7 +101,13 @@ config LWIP_DHCP_CHECK_LINK_UP
     int
     default 1
 menu "Bsp definition options"
-    choice 
+    config RT_USING_PWM
+        bool "Using PWM device drivers"
+        default n
+    config RT_USING_LCD
+        bool "Using LCD device drivers"
+        default n
+    choice
         prompt "Dynamic Memory Management"
         default RT_USING_SLAB
         config RT_USING_NOHEAP
@@ -117,6 +120,18 @@ menu "Bsp definition options"
         config RT_USING_MEMHEAP_AS_HEAP
             bool "Use all of memheap objects as heap"
         endif
+    endchoice
+    choice
+        prompt "Support long file name"
+        default RT_DFS_ELM_USE_LFN_3
+        config RT_DFS_ELM_USE_LFN_0
+            bool "0: LFN disable"
+        config RT_DFS_ELM_USE_LFN_1
+            bool "1: LFN with static LFN working buffer"
+        config RT_DFS_ELM_USE_LFN_2
+            bool "2: LFN with dynamic LFN working buffer on the stack"
+        config RT_DFS_ELM_USE_LFN_3
+            bool "3: LFN with dynamic LFN working buffer on the heap"
     endchoice
     choice
         prompt "lwIP version"

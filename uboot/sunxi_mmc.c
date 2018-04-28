@@ -19,6 +19,16 @@
 #include <asm/arch/mmc.h>
 #include <asm-generic/gpio.h>
 
+/* local debug macro */
+#undef MMC_DEBUG
+
+#undef debug
+#ifdef MMC_DEBUG
+#define debug(fmt, args...)	printf(fmt, ##args)
+#else
+#define debug(fmt, args...)
+#endif /* MMC_DEBUG */
+
 struct sunxi_mmc_host {
 	unsigned mmc_no;
 	u32 *mclkreg;
@@ -240,7 +250,7 @@ void sunxi_mmc_set_ios(struct sunxi_mmc_host *mmchost, int clock, int bus_width)
 		writel(0x2, &mmchost->reg->width);
 	else if (bus_width == 4)
 		writel(0x1, &mmchost->reg->width);
-	else
+	else if (bus_width == 1)
 		writel(0x0, &mmchost->reg->width);
 }
 
@@ -429,9 +439,7 @@ int sunxi_mmc_getcd(struct sunxi_mmc_host *mmchost)
 
 	cd_pin = sunxi_mmc_getcd_gpio(mmchost->mmc_no);
 	if (cd_pin < 0){
-        unsigned int status = readl(&mmchost->reg->rint);
-        writel(SUNXI_MMC_RINT_CARD_INSERT|SUNXI_MMC_RINT_CARD_REMOVE, &mmchost->reg->rint);
-		return (status & (SUNXI_MMC_RINT_CARD_INSERT|SUNXI_MMC_RINT_CARD_REMOVE))==SUNXI_MMC_RINT_CARD_INSERT;
+		return 1;
     }
 
 	return !gpio_get_value(cd_pin);

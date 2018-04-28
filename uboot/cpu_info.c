@@ -53,6 +53,7 @@ uint sunxi_get_sram_id(void)
 #endif
 
 #ifdef CONFIG_DISPLAY_CPUINFO
+extern unsigned int clock_get_pll1(void);
 int print_cpuinfo(void)
 {
 #ifdef CONFIG_MACH_SUN4I
@@ -88,7 +89,7 @@ int print_cpuinfo(void)
 #elif defined CONFIG_MACH_SUN8I_H3
 	printf("CPU:   Allwinner H3 (SUN8I %04x)\n", sunxi_get_sram_id());
 #elif defined CONFIG_MACH_SUN8I_V3S
-	printf("CPU:   Allwinner V3s (SUN8I %04x)\n", sunxi_get_sram_id());
+	printf("CPU:   Allwinner V3s @ %dMHz (SUN8I %04x)\n", clock_get_pll1(), sunxi_get_sram_id());
 #elif defined CONFIG_MACH_SUN9I
 	puts("CPU:   Allwinner A80 (SUN9I)\n");
 #elif defined CONFIG_MACH_SUN50I

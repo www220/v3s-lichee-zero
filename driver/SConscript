@@ -7,7 +7,6 @@ cwd     = GetCurrentDir()
 src = Split("""
 board.c
 romfs.c
-drv_lcd.c
 """)
 gpiodev = Split("""
 drv_gpio.c
@@ -33,6 +32,12 @@ drv_i2c.c
 wdtdev = Split("""
 drv_wdt.c
 """)
+pwmdev = Split("""
+drv_pwm.c
+""")
+lcddev = Split("""
+drv_lcd.c
+""")
 
 if GetDepend(['RT_USING_SERIAL']):
     src += uartdev
@@ -50,6 +55,10 @@ if GetDepend(['RT_USING_I2C']):
     src += i2cdev
 if GetDepend(['RT_USING_WDT']):
     src += wdtdev
+if GetDepend(['RT_USING_PWM']):
+    src += pwmdev
+if GetDepend(['RT_USING_LCD']):
+    src += pwmdev
 
 CPPPATH = [cwd]
 

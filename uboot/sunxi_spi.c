@@ -17,6 +17,16 @@
 #include <asm/arch/clock.h>
 #include <asm/arch/spi.h>
 
+/* local debug macro */
+#undef SPI_DEBUG
+
+#undef debug
+#ifdef SPI_DEBUG
+#define debug(fmt, args...)	printf(fmt, ##args)
+#else
+#define debug(fmt, args...)
+#endif /* SPI_DEBUG */
+
 #define SUNXI_SPI_MAX_RATE (24 * 1000 * 1000)
 #define SUNXI_SPI_MIN_RATE (3 * 1000)
 

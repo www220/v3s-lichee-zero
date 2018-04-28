@@ -28,6 +28,7 @@
 
 #include "board.h"
 #include "interrupt.h"
+#include <stdlib.h>
 #include <time.h>
 
 #define SUNXI_RTC_BASE 0x1c20400

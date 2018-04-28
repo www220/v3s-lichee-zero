@@ -42,9 +42,9 @@ struct hw_spi_bus
 struct hw_spi_dev
 {
     char *name;
+    int cs;
     uint32_t pin;
     int32_t mode;
-    int cs;
 };
 
 extern int sunxi_spi_set_speed(void  *priv, uint speed);
@@ -107,7 +107,7 @@ static struct rt_spi_device _spidev00;
 void spibus_pin_config(struct rt_spi_bus *bus, struct hw_spi_bus *spi)
 {
     int i;
-    for (i=0; i<sizeof(spi->pin)/spi->pin[0]; i++) gpio_set_mode(spi->pin[i], spi->mode[i]);
+    for (i=0; i<sizeof(spi->pin)/sizeof(spi->pin[0]); i++) gpio_set_mode(spi->pin[i], spi->mode[i]);
     bus->parent.user_data = spi;
     rt_spi_bus_register(bus, spi->name, &_spi_ops);
 }
@@ -117,17 +117,6 @@ void spidev_pin_config(const char *bus, struct rt_spi_device *dev, struct hw_spi
     gpio_set_mode(spi->pin, spi->mode);
     rt_spi_bus_attach_device(dev, spi->name, bus, spi);
 }
-
-extern int sunxi_spi_probe(const char *name, uint32_t reg, void **dev);
-int rt_hw_spi_init(void)
-{
-    sunxi_spi_probe(_spibus0_user.name, _spibus0_user.base, &_spibus0_user.dev_ptr);
-    spibus_pin_config(&_spibus0, &_spibus0_user);
-    spidev_pin_config(_spibus0_user.name, &_spidev00, &_spidev00_user);
-
-    return 0;
-}
-INIT_PREV_EXPORT(rt_hw_spi_init);
 
 int rt_hw_spi_sfud(void)
 {
@@ -142,3 +131,13 @@ int rt_hw_spi_sfud(void)
 }
 INIT_PREV_EXPORT(rt_hw_spi_sfud);
 
+extern int sunxi_spi_probe(const char *name, uint32_t reg, void **dev);
+int rt_hw_spi_init(void)
+{
+    sunxi_spi_probe(_spibus0_user.name, _spibus0_user.base, &_spibus0_user.dev_ptr);
+    spibus_pin_config(&_spibus0, &_spibus0_user);
+    spidev_pin_config(_spibus0_user.name, &_spidev00, &_spidev00_user);
+
+    return 0;
+}
+INIT_PREV_EXPORT(rt_hw_spi_init);

@@ -41,7 +41,10 @@
 struct mmc_mci {
 	struct rt_mmcsd_host *host;
 	void *dev_ptr;
-    volatile int run;
+    int plug;
+    int clock;
+    int bus_width;
+    volatile int err;
 };
 static struct mmc_mci mci;
 
@@ -84,7 +87,7 @@ struct mmc_data {
 #define MMC_RSP_R7	(MMC_RSP_PRESENT|MMC_RSP_CRC|MMC_RSP_OPCODE)
 static int mmc_resp_idx[0x10] = {
     MMC_RSP_NONE,MMC_RSP_R1,MMC_RSP_R1b,MMC_RSP_R2,
-    MMC_RSP_R3,MMC_RSP_R4,RESP_R6,RESP_R7,RESP_R5};
+    MMC_RSP_R3,MMC_RSP_R4,MMC_RSP_R6,MMC_RSP_R7,MMC_RSP_R5};
 
 #define MMC_DATA_READ		1
 #define MMC_DATA_WRITE		2
@@ -97,6 +100,7 @@ static void mmc_conv_reqtommc(struct rt_mmcsd_cmd* req, struct mmc_cmd *cmd, str
     cmd->cmdidx = req->cmd_code;
     cmd->resp_type = mmc_resp_idx[resp_type(req)];
     cmd->cmdarg = req->arg;
+    if (!req->data) return;
     data->dest = (char *)req->data->buf;
     data->flags = mmc_flags_idx[req->data->flags&0x3];
     data->blocks = req->data->blks;
@@ -111,12 +115,18 @@ static void mmc_mci_request(struct rt_mmcsd_host *host, struct rt_mmcsd_req *req
     struct mmc_cmd cmd;
     struct mmc_data data;
     mmc_conv_reqtommc(req->cmd, &cmd, &data);
-    req->cmd->err = sunxi_mmc_send_cmd(mmc->dev_ptr, &cmd, &data);
-    rt_memcpy(req->cmd->resp, cmd.response, sizeof(req->cmd->resp));
+    req->cmd->err = sunxi_mmc_send_cmd(mmc->dev_ptr, &cmd, (req->cmd->data)?&data:RT_NULL);
+    if (req->cmd->err == 0){
+        rt_memcpy(req->cmd->resp, cmd.response, sizeof(req->cmd->resp));
+        mmc->err = 0;
+    }else{ mmc->err++; }
     if (req->stop) {
         mmc_conv_reqtommc(req->stop, &cmd, &data);
-        req->stop->err = sunxi_mmc_send_cmd(mmc->dev_ptr, &cmd, &data);
-        rt_memcpy(req->stop->resp, cmd.response, sizeof(req->stop->resp));
+        req->stop->err = sunxi_mmc_send_cmd(mmc->dev_ptr, &cmd, (req->stop->data)?&data:RT_NULL);
+        if (req->stop->err == 0){
+            rt_memcpy(req->stop->resp, cmd.response, sizeof(req->stop->resp));
+            mmc->err = 0;
+        }else{ mmc->err++; }
     }
     mmcsd_req_complete(host);
 }
@@ -128,11 +138,17 @@ static void mmc_mci_set_iocfg(struct rt_mmcsd_host *host, struct rt_mmcsd_io_cfg
 	struct mmc_mci *mmc = (struct mmc_mci*)host->private_data;
     RT_ASSERT(mmc != RT_NULL);
 
-	if (io_cfg->power_mode == MMCSD_POWER_OFF) {
-         mmc->run = 0;
-	}else{
-	    if (io_cfg->power_mode == MMCSD_POWER_UP) sunxi_mmc_core_init(mmc->dev_ptr);
-        sunxi_mmc_set_ios(mmc->dev_ptr, io_cfg->clock, 1<<io_cfg->bus_width);
+	if (io_cfg->power_mode != MMCSD_POWER_OFF){
+        if (io_cfg->clock != mmc->clock) {
+            sunxi_mmc_core_init(mmc->dev_ptr);
+            sunxi_mmc_set_ios(mmc->dev_ptr, io_cfg->clock, 1<<io_cfg->bus_width);
+            mmc->clock = io_cfg->clock;
+            mmc->bus_width = io_cfg->bus_width;
+        }
+        if (io_cfg->bus_width != mmc->bus_width){
+            sunxi_mmc_set_ios(mmc->dev_ptr, 0, 1<<io_cfg->bus_width);
+            mmc->bus_width = io_cfg->bus_width;
+        }
     }
 }
 
@@ -143,39 +159,37 @@ static const struct rt_mmcsd_host_ops ops = {
 
 static void sd_thread_entry(void *parameter)
 {
-    uint32_t card,status;
+    uint32_t status;
     struct mmc_mci *mmc = (struct mmc_mci*)parameter;
     
-    card = mmcsd_is_cd(mmc);
-    rt_thread_delay(RT_TICK_PER_SECOND);
+    status = mmc->plug;
+    rt_thread_delay(10*RT_TICK_PER_SECOND);
     while(1)
     {
-        status  = mmcsd_is_cd(mmc);
-        if (status != card) {
-            if (status) {
-            	SD_LINK_PRINTF("MMC: No card detected!\n");
-            	if (mmc->host->card) {
-            		mmcsd_change(mmc->host);
-            		mmcsd_wait_cd_changed(5000);
-            		if (mmc->host->card == NULL)
-            			SD_LINK_PRINTF("Unmount /mmc ok!\n");
-            		else
-            			SD_LINK_PRINTF("Unmount /mmc failed!\n");
-        		}
-        	} else {
-        		SD_LINK_PRINTF("MMC: Card detected!\n");
-        		mmc->run = 1;
-        		mmcsd_change(mmc->host);
-        		mmcsd_wait_cd_changed(5000);
-        	    if (dfs_mount("sd0", "/mmc", "elm", 0, 0) == 0)
-        	    	SD_LINK_PRINTF("Mount /mmc ok!\n");
-        	    else
-        	    	SD_LINK_PRINTF("Mount /mmc failed!\n");
-        	}
-            card = status;
+        if (status != MMCSD_HOST_PLUGED && !mmc->host->card){
+            mmcsd_change(mmc->host);
+            mmc->plug = mmcsd_wait_cd_changed(5000);
+            if (mmc->plug == MMCSD_HOST_PLUGED) {
+                SD_LINK_PRINTF("MMC: Card detected!\n");
+               if (dfs_mount("sd0", "/mmc", "elm", 0, 0) == 0)
+                    SD_LINK_PRINTF("Mount /mmc ok!\n");
+                else
+                    SD_LINK_PRINTF("Mount /mmc failed!\n");
+                status = mmc->plug;
+            }
+        }else if(mmc->err > 10 && mmc->host->card){
+            SD_LINK_PRINTF("MMC: No card detected!\n");
+            mmcsd_change(mmc->host);
+            mmc->plug = mmcsd_wait_cd_changed(5000);
+            if (mmc->host->card == NULL)
+                SD_LINK_PRINTF("Unmount /mmc ok!\n");
+            else
+                SD_LINK_PRINTF("Unmount /mmc failed!\n");
+            status = mmc->plug;
+            mmc->err = 0;
         }
 
-        rt_thread_delay(RT_TICK_PER_SECOND);
+        rt_thread_delay(10*RT_TICK_PER_SECOND);
     }
 }
 
@@ -208,13 +222,17 @@ int rt_hw_tf_init(void)
 	mci.host->max_blk_count = 4096;
 	mci.host->private_data = &mci;
 
-    mci.run = 1;
     mmcsd_change(mci.host);
-    mmcsd_wait_cd_changed(5000);
-    if (dfs_mount("sd0", "/mmc", "elm", 0, 0) == 0)
-        SD_LINK_PRINTF("Mount /mmc ok!\n");
-    else
-        SD_LINK_PRINTF("Mount /mmc failed!\n");
+    mci.plug = mmcsd_wait_cd_changed(5000);
+    if (mci.plug == MMCSD_HOST_PLUGED) {
+        SD_LINK_PRINTF("MMC: Card detected!\n");
+        if (dfs_mount("sd0", "/mmc", "elm", 0, 0) == 0)
+            SD_LINK_PRINTF("Mount /mmc ok!\n");
+        else
+            SD_LINK_PRINTF("Mount /mmc failed!\n");
+    }else{
+        SD_LINK_PRINTF("MMC: No card detected!\n");
+    }
 
     /* start sd monitor */
     rt_thread_t tid = rt_thread_create("sd_mon", sd_thread_entry,

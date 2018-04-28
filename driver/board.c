@@ -27,7 +27,9 @@
 
 #include "board.h"
 #include "interrupt.h"
+#include "drivers/watchdog.h"
 
+int ctrlc(void) { return 0; }
 extern int tick_timer_ack(void);
 static void clock_irq(int vector, void *param)
 {
@@ -75,17 +77,27 @@ void rt_hw_board_init(void)
     extern unsigned int clock_get_pll1(void);
     rt_kprintf("\n\n");
     print_cpuinfo();
-    rt_kprintf("       %d MHz\n");
-    rt_kprintf("DRAM:  64 MiB\n\n");
+    rt_kprintf("DRAM:  64 MiB\n");
 }
 
-#ifdef RT_USING_DFS_MNTTABLE
-#include <dfs_fs.h>
-extern const struct romfs_dirent romfs_root;
-const struct dfs_mount_tbl mount_table[] = {
-    {RT_NULL, "/", "rom", 0, &romfs_root},
-    {RT_NULL}
-};
-#endif
-int ctrlc(void) { return 0; }
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+#include <msh.h>
+int cmd_reboot(int argc, char** argv)
+{
+    int timeout = 1;
+    if (argc > 1) timeout = atol(argv[1]);
+    rt_device_t dev = rt_device_find("wdt");
+    if (dev){
+        rt_device_control(dev, RT_DEVICE_CTRL_WDT_SET_TIMEOUT, &timeout);
+        rt_device_control(dev, RT_DEVICE_CTRL_WDT_START, RT_NULL);
+    }else{
+        rt_kprintf("can't find wdt device\n");
+    }
+
+    return 0;
+}
+
+FINSH_FUNCTION_EXPORT_ALIAS(cmd_reboot, __cmd_reboot, Reboot With WDT.)
+#endif //RT_USING_FINSH
 

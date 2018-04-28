@@ -43,3 +43,12 @@ const struct romfs_dirent romfs_root =
     ROMFS_DIRENT_DIR, "/", (rt_uint8_t *)_root_dirent, sizeof(_root_dirent)/sizeof(_root_dirent[0])
 };
 
+
+#include <dfs_fs.h>
+int rt_hw_romfs_init(void)
+{
+    dfs_mount(RT_NULL, "/", "rom", 0, &romfs_root);
+
+    return 0;
+}
+INIT_EXPORT(rt_hw_romfs_init, "4.end");

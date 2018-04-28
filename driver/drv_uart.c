@@ -146,7 +146,7 @@ static struct rt_serial_device _uart0;
 void uart_pin_config(struct rt_serial_device *dev, struct hw_uart_device *uart)
 {
     int i;
-    for (i=0; i<sizeof(uart->pin)/uart->pin[0]; i++) gpio_set_mode(uart->pin[i], uart->mode[i]);
+    for (i=0; i<sizeof(uart->pin)/sizeof(uart->pin[0]); i++) gpio_set_mode(uart->pin[i], uart->mode[i]);
     rt_hw_interrupt_install(uart->irqno, rt_hw_uart_isr, dev, uart->name);
     rt_hw_interrupt_mask(uart->irqno);
     rt_hw_serial_register(dev, uart->name, RT_DEVICE_FLAG_RDWR | RT_DEVICE_FLAG_INT_RX, uart);
