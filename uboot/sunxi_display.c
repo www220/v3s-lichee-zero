@@ -28,6 +28,16 @@
 #include "hitachi_tx18d42vm_lcd.h"
 #include "ssd2828.h"
 
+/* local debug macro */
+#undef LCD_DEBUG
+
+#undef debug
+#ifdef LCD_DEBUG
+#define debug(fmt, args...)	printf(fmt, ##args)
+#else
+#define debug(fmt, args...)
+#endif /* LCD_DEBUG */
+
 #ifdef CONFIG_VIDEO_LCD_BL_PWM_ACTIVE_LOW
 #define PWM_ON 0
 #define PWM_OFF 1
@@ -52,8 +62,6 @@ enum sunxi_monitor {
 struct sunxi_display {
 	enum sunxi_monitor monitor;
 	unsigned int depth;
-	unsigned int fb_addr;
-	unsigned int fb_size;
 } sunxi_display;
 
 const struct ctfb_res_modes composite_video_modes[2] = {
@@ -73,7 +81,7 @@ static int await_completion(u32 *reg, u32 mask, u32 val)
 
 	while ((readl(reg) & mask) != val) {
 		if (timer_get_us() > tmo) {
-			printf("DDC: timeout reading EDID\n");
+			debug("DDC: timeout reading EDID\n");
 			return -ETIME;
 		}
 	}
@@ -189,7 +197,7 @@ static int sunxi_hdmi_edid_get_block(int block, u8 *buf)
 			continue;
 		r = edid_check_checksum(buf);
 		if (r) {
-			printf("EDID block %d: checksum error%s\n",
+			debug("EDID block %d: checksum error%s\n",
 			       block, retries ? ", retrying" : "");
 		}
 	} while (r && retries--);
@@ -235,7 +243,7 @@ static int sunxi_hdmi_edid_get_mode(struct ctfb_res_modes *mode)
 	if (r == 0) {
 		r = edid_check_info(&edid1);
 		if (r) {
-			printf("EDID: invalid EDID data\n");
+			debug("EDID: invalid EDID data\n");
 			r = -EINVAL;
 		}
 	}
@@ -262,7 +270,7 @@ static int sunxi_hdmi_edid_get_mode(struct ctfb_res_modes *mode)
 	/* We want version 1.3 or 1.2 with detailed timing info */
 	if (edid1.version != 1 || (edid1.revision < 3 &&
 			!EDID1_INFO_FEATURE_PREFERRED_TIMING_MODE(edid1))) {
-		printf("EDID: unsupported version %d.%d\n",
+		debug("EDID: unsupported version %d.%d\n",
 		       edid1.version, edid1.revision);
 		return -EINVAL;
 	}
@@ -274,7 +282,7 @@ static int sunxi_hdmi_edid_get_mode(struct ctfb_res_modes *mode)
 			break;
 	}
 	if (i == 4) {
-		printf("EDID: no usable detailed timing found\n");
+		debug("EDID: no usable detailed timing found\n");
 		return -ENOENT;
 	}
 
@@ -611,13 +619,14 @@ static void sunxi_composer_mode_set(const struct ctfb_res_modes *mode,
 	writel(0, SUNXI_DE2_MUX0_BASE + SUNXI_DE2_MUX_DCSC_REGS);
 
 	data = SUNXI_DE2_UI_CFG_ATTR_EN |
-	       SUNXI_DE2_UI_CFG_ATTR_FMT(SUNXI_DE2_FORMAT_XRGB_8888) |
 	       SUNXI_DE2_UI_CFG_ATTR_ALPMOD(1) |
 	       SUNXI_DE2_UI_CFG_ATTR_ALPHA(0xff);
+    if (sunxi_display.depth == 16) data |= SUNXI_DE2_UI_CFG_ATTR_FMT(SUNXI_DE2_FORMAT_RGB_565);
+    else data |= SUNXI_DE2_UI_CFG_ATTR_FMT(SUNXI_DE2_FORMAT_XRGB_8888);
 	writel(data, &de_ui_regs->cfg[0].attr);
 	writel(size, &de_ui_regs->cfg[0].size);
 	writel(0, &de_ui_regs->cfg[0].coord);
-	writel(4 * mode->xres, &de_ui_regs->cfg[0].pitch);
+	writel(sunxi_display.depth/8 * mode->xres, &de_ui_regs->cfg[0].pitch);
 	writel(address, &de_ui_regs->cfg[0].top_laddr);
 	writel(size, &de_ui_regs->ovl_size);
 }
@@ -639,7 +648,6 @@ void sunxi_composer_fbbase_set(void* fbbase)
 				 SUNXI_DE2_MUX_CHAN_SZ * 2);
 
 	unsigned int address = (unsigned int)fbbase - CONFIG_SYS_SDRAM_BASE;
-	sunxi_display.fb_addr = (unsigned int)fbbase;
 	writel(address, &de_ui_regs->cfg[0].top_laddr);
 	sunxi_composer_enable();
 }
@@ -881,6 +889,13 @@ static void sunxi_lcdc_backlight_enable(void)
 	pin = sunxi_name_to_gpio(CONFIG_VIDEO_LCD_BL_PWM);
 #ifdef SUNXI_PWM_PIN0
 	if (pin == SUNXI_PWM_PIN0) {
+		extern int sun4i_pwm_using(void);
+		extern void sun4i_pwm_set_polarity(int hwpwm, int polarity);
+		if (sun4i_pwm_using()){
+			sun4i_pwm_set_polarity(0, PWM_OFF);
+			sunxi_gpio_set_cfgpin(pin, SUNXI_PWM_MUX);
+			return;
+		}
 		writel(SUNXI_PWM_CTRL_POLARITY0(PWM_ON) |
 		       SUNXI_PWM_CTRL_ENABLE0 |
 		       SUNXI_PWM_CTRL_PRESCALE0(0xf), SUNXI_PWM_CTRL_REG);
@@ -1332,11 +1347,11 @@ static int sunxi_ssd2828_init(const struct ctfb_res_modes *mode)
 	};
 
 	if (cfg.csx_pin == -1 || cfg.sck_pin == -1 || cfg.sdi_pin == -1) {
-		printf("SSD2828: SPI pins are not properly configured\n");
+		debug("SSD2828: SPI pins are not properly configured\n");
 		return 1;
 	}
 	if (cfg.reset_pin == -1) {
-		printf("SSD2828: Reset pin is not properly configured\n");
+		debug("SSD2828: Reset pin is not properly configured\n");
 		return 1;
 	}
 
@@ -1532,7 +1547,7 @@ void *video_hw_init_probe(void* fbbase, u8 *depth, u16* width, u16* height)
 		}
 	}
 	if (i > SUNXI_MONITOR_LAST)
-		printf("Unknown monitor: '%s', falling back to '%s'\n",
+		debug("Unknown monitor: '%s', falling back to '%s'\n",
 		       mon, sunxi_get_mon_desc(sunxi_display.monitor));
 
 #ifdef CONFIG_VIDEO_HDMI
@@ -1558,14 +1573,14 @@ void *video_hw_init_probe(void* fbbase, u8 *depth, u16* width, u16* height)
 	case sunxi_monitor_dvi:
 	case sunxi_monitor_hdmi:
 		if (!sunxi_has_hdmi()) {
-			printf("HDMI/DVI not supported on this board\n");
+			debug("HDMI/DVI not supported on this board\n");
 			sunxi_display.monitor = sunxi_monitor_none;
 			return NULL;
 		}
 		break;
 	case sunxi_monitor_lcd:
 		if (!sunxi_has_lcd()) {
-			printf("LCD not supported on this board\n");
+			debug("LCD not supported on this board\n");
 			sunxi_display.monitor = sunxi_monitor_none;
 			return NULL;
 		}
@@ -1574,7 +1589,7 @@ void *video_hw_init_probe(void* fbbase, u8 *depth, u16* width, u16* height)
 		break;
 	case sunxi_monitor_vga:
 		if (!sunxi_has_vga()) {
-			printf("VGA not supported on this board\n");
+			debug("VGA not supported on this board\n");
 			sunxi_display.monitor = sunxi_monitor_none;
 			return NULL;
 		}
@@ -1585,7 +1600,7 @@ void *video_hw_init_probe(void* fbbase, u8 *depth, u16* width, u16* height)
 	case sunxi_monitor_composite_pal_m:
 	case sunxi_monitor_composite_pal_nc:
 		if (!sunxi_has_composite()) {
-			printf("Composite video not supported on this board\n");
+			debug("Composite video not supported on this board\n");
 			sunxi_display.monitor = sunxi_monitor_none;
 			return NULL;
 		}
@@ -1604,23 +1619,15 @@ void *video_hw_init_probe(void* fbbase, u8 *depth, u16* width, u16* height)
 	if (overscan_y == -1)
 		overscan_y = sunxi_is_composite() ? 20 : 0;
 
-	sunxi_display.fb_size = (mode->xres * mode->yres * 4 + 0xfff) & ~0xfff;
-	if (sunxi_display.fb_size > CONFIG_SUNXI_MAX_FB_SIZE) {
-		printf("Error need %dkB for fb, but only %dkB is reserved\n",
-		       sunxi_display.fb_size >> 10,
-		       CONFIG_SUNXI_MAX_FB_SIZE >> 10);
-		return NULL;
-	}
-
-	printf("Setting up a %dx%d%s %s console (overscan %dx%d)\n",
+	printf("Setting up a %dx%d%s %dbit %s console (overscan %dx%d)\n",
 	       mode->xres, mode->yres,
 	       (mode->vmode == FB_VMODE_INTERLACED) ? "i" : "",
+	       sunxi_display.depth,
 	       sunxi_get_mon_desc(sunxi_display.monitor),
 	       overscan_x, overscan_y);
 	sunxi_engines_init();
 
 	fb_dma_addr = (unsigned int)fbbase - CONFIG_SYS_SDRAM_BASE;
-	sunxi_display.fb_addr = (unsigned int)fbbase;
 	sunxi_mode_set(mode, fb_dma_addr);
 
     *depth = sunxi_display.depth;

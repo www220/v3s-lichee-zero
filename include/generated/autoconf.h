@@ -157,7 +157,7 @@
 #define CONFIG_VIDEO_LCD_BL_EN ""
 #define CONFIG_CMD_NET 1
 #define CONFIG_MENU 1
-#define CONFIG_VIDEO_LCD_MODE "x:800,y:480,depth:18,pclk_khz:33000,le:87,ri:40,up:31,lo:13,hs:1,vs:1,sync:3,vmode:0"
+#define CONFIG_VIDEO_LCD_MODE "x:800,y:480,depth:16,pclk_khz:33000,le:87,ri:40,up:31,lo:13,hs:1,vs:1,sync:3,vmode:0"
 #define CONFIG_DEFAULT_DEVICE_TREE "sun8i-v3s-licheepi-zero"
 #define CONFIG_NET_TFTP_VARS 1
 #define CONFIG_SPI_FLASH_USE_4K_SECTORS 1

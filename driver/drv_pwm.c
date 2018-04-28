@@ -29,13 +29,31 @@
 #include "board.h"
 #include "interrupt.h"
 
-extern int sun4i_pwm_probe(u32 base, u32 clk);
+extern int sun4i_pwm_probe(uint32_t base, uint32_t clk);
 int rt_hw_pwm_init(void)
 {
-    gpio_set_mode(SUNXI_GPB(4), PIN_TYPE(SUNXI_GPB_PWM0)|PULL_UP);
-    gpio_set_mode(SUNXI_GPB(5), PIN_TYPE(SUNXI_GPB_PWM1)|PULL_UP);
     sun4i_pwm_probe(0x1c21400, 24000000);
 
     return 0;
 }
 INIT_DEVICE_EXPORT(rt_hw_pwm_init);
+
+#ifdef RT_USING_FINSH
+#include <finsh.h>
+#include <msh.h>
+int cmd_backlight(int argc, char** argv)
+{
+    int ps = 100;
+    if (argc > 1) ps = atol(argv[1]);
+    if (ps < 0) ps = 0;
+    if (ps > 100) ps = 100;
+    sun4i_pwm_disable(0);
+    sun4i_pwm_config(0, ps*2000000L/100, 2000000L);
+    sun4i_pwm_enable(0);
+    rt_kprintf("backlight is %d%%\n", ps);
+
+    return 0;
+}
+
+FINSH_FUNCTION_EXPORT_ALIAS(cmd_backlight, __cmd_backlight, Set Backlight With LCD.)
+#endif //RT_USING_FINSH

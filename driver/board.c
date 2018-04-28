@@ -50,6 +50,14 @@ void NS16550_puts(void *com_port, const char *s)
     while (*s) NS16550_putc(com_port, *s++);
 }
 
+int sun4i_pwm_using(void)
+{
+#ifdef RT_USING_PWM
+    return 0;
+#endif
+    return 0;
+};
+
 void rt_hw_board_init(void)
 {
     // init mmu

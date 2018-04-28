@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <time.h>
 #include <malloc.h>
+#include <div64.h>
 #include <asm/io.h>
 #include <asm/arch/clock.h>
 #include <asm/arch/cpu.h>
@@ -51,7 +52,6 @@
 #define clk_prepare_enable(x)	0
 #define clk_disable_unprepare(x)
 #define clk_get_rate(x) (x)
-#define do_div(x,y) lldiv(x,y)
 
 static const u32 prescaler_table[] = {
 	120,

@@ -455,6 +455,8 @@ struct sunxi_tve_reg {
 #define SUNXI_DE2_FORMAT_XRGB_8888		4
 #define SUNXI_DE2_FORMAT_RGB_888		8
 #define SUNXI_DE2_FORMAT_BGR_888		9
+#define SUNXI_DE2_FORMAT_RGB_565		10
+#define SUNXI_DE2_FORMAT_BGR_565		11
 
 #define SUNXI_DE2_MUX_GLB_CTL_RT_EN		(1 << 0)
 

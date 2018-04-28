@@ -193,7 +193,7 @@ void rt_hw_mmu_init(void)
     rt_hw_mmu_setmtt(0x00000000,  0xFFFFFFFF,    0x00000000, RW_NCNB);
     rt_hw_mmu_setmtt(0x40000000,  dma_nocache-1, 0x40000000, RW_CB);
     rt_hw_mmu_setmtt(0x00000000,  0x000FFFFF,    0x00000000, RW_NCNB|TEX_MEM);
-    rt_hw_mmu_setmtt(dma_nocache, 0x43FFFFFF,    0x43C00000, RW_NCNB|TEX_MEM);
+    rt_hw_mmu_setmtt(dma_nocache, 0x43FFFFFF,    dma_nocache, RW_NCNB|TEX_MEM);
     rt_cpu_tlb_set(MMUTable);
     
     rt_hw_set_domain_register(0xFFFFFFFF);

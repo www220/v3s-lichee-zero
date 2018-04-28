@@ -58,7 +58,7 @@ if GetDepend(['RT_USING_WDT']):
 if GetDepend(['RT_USING_PWM']):
     src += pwmdev
 if GetDepend(['RT_USING_LCD']):
-    src += pwmdev
+    src += lcddev
 
 CPPPATH = [cwd]
 
